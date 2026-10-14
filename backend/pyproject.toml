@@ -1,0 +1,20 @@
+# Tool configuration for the backend (Ruff and pytest).
+
+[project]
+name = "itsm-backend"
+version = "0.1.0"
+description = "Bilingual ITSM Device Management System API"
+authors = [{ name = "Tamang Amish" }]
+requires-python = ">=3.12,<3.13"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "N", "ANN"]
+# S101: assert is the normal way to write pytest checks.
+per-file-ignores = { "tests/**" = ["S101"] }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

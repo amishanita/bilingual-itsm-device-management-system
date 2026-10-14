@@ -1,0 +1,40 @@
+# Files excluded from version control.
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Terraform state, plans, and secret variables
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+infra/terraform/*.tfplan
+infra/terraform/terraform.tfvars
+infra/terraform/.terraform.lock.hcl.bak
+
+# Backups and dumps
+*.sql
+*.sql.gz
+*.dump
+
+# Credentials
+*.pem
+*.key
+credentials*
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
