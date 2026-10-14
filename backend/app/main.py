@@ -1,22 +1,25 @@
 """FastAPI application entry point."""
 
 import logging
-from typing import Annotated
 
-from fastapi import Depends, FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.database import check_database, get_db
+from app.core.database import check_database
+from app.core.deps import DbSession
+from app.core.errors import AppError, register_error_handlers
+from app.core.limiter import limiter
+from app.routers import auth
 
 logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
 app = FastAPI(title="Bilingual ITSM Device Management System", version="0.1.0")
+app.state.limiter = limiter
+register_error_handlers(app)
 
 # Only the configured frontend origin may call the API from a browser. Never "*".
 app.add_middleware(
@@ -27,9 +30,11 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "Accept-Language"],
 )
 
+api = APIRouter(prefix="/api")
 
-@app.get("/health", response_model=None)
-def health(db: Annotated[Session, Depends(get_db)]) -> dict[str, str] | JSONResponse:
+
+@api.get("/health")
+def health(db: DbSession) -> dict[str, str]:
     """Report API and database health.
 
     Returns 503 with the standard error body when the database is unreachable.
@@ -37,15 +42,11 @@ def health(db: Annotated[Session, Depends(get_db)]) -> dict[str, str] | JSONResp
     """
     try:
         check_database(db)
-    except SQLAlchemyError:
+    except SQLAlchemyError as exc:
         logger.exception("Database health check failed")
-        return JSONResponse(
-            status_code=503,
-            content={
-                "detail": {
-                    "code": "DATABASE_UNAVAILABLE",
-                    "message": "The database is not available.",
-                }
-            },
-        )
+        raise AppError(503, "DATABASE_UNAVAILABLE", "The database is not available.") from exc
     return {"status": "ok", "database": "ok"}
+
+
+api.include_router(auth.router)
+app.include_router(api)

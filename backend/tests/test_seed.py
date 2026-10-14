@@ -27,6 +27,7 @@ def settings_for(app_env: AppEnv, password: str | None = DEMO_PASSWORD) -> Setti
         _env_file=None,
         app_env=app_env,
         database_url=os.environ["TEST_DATABASE_URL"],
+        jwt_secret=SecretStr(os.environ["JWT_SECRET"]),
         demo_password=SecretStr(password) if password is not None else None,
     )
 
@@ -129,4 +130,12 @@ def test_failed_seed_rolls_back_and_keeps_previous_data(
 def test_seed_command_exit_codes(monkeypatch: pytest.MonkeyPatch) -> None:
     """python -m app.seed returns 2 and does nothing when refused."""
     monkeypatch.setattr(seed, "get_settings", lambda: settings_for(AppEnv.PRODUCTION))
+    assert seed.main() == 2
+
+
+def test_seed_command_reports_missing_settings_cleanly(monkeypatch: pytest.MonkeyPatch) -> None:
+    def missing_secret() -> Settings:
+        return Settings(_env_file=None, database_url="postgresql+psycopg://x@y/z")
+
+    monkeypatch.setattr(seed, "get_settings", missing_secret)
     assert seed.main() == 2

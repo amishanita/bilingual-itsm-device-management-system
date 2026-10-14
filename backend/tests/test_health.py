@@ -1,4 +1,4 @@
-"""Phase 1 tests: health endpoint, CORS policy, and the test-database guard."""
+"""Health endpoint, CORS policy, and the test-database guard."""
 
 from collections.abc import Iterator
 
@@ -11,7 +11,7 @@ from tests.conftest import validate_test_database_url
 
 
 def test_health_reports_ok_when_database_is_reachable(client: TestClient) -> None:
-    response = client.get("/health")
+    response = client.get("/api/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "database": "ok"}
 
@@ -37,7 +37,7 @@ def test_health_returns_503_without_internal_details_when_database_is_down(
             session.close()
 
     app.dependency_overrides[get_db] = broken_get_db
-    response = client.get("/health")
+    response = client.get("/api/health")
     dead_engine.dispose()
 
     assert response.status_code == 503
@@ -53,10 +53,10 @@ def test_cors_allows_only_the_configured_frontend_origin(client: TestClient) -> 
     from app.core.config import get_settings
 
     allowed = get_settings().frontend_origin
-    ok = client.get("/health", headers={"Origin": allowed})
+    ok = client.get("/api/health", headers={"Origin": allowed})
     assert ok.headers.get("access-control-allow-origin") == allowed
 
-    blocked = client.get("/health", headers={"Origin": "https://evil.example"})
+    blocked = client.get("/api/health", headers={"Origin": "https://evil.example"})
     assert "access-control-allow-origin" not in blocked.headers
 
 

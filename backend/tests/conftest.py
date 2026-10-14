@@ -6,6 +6,7 @@ create and drop tables in that database, so this guard protects real data.
 """
 
 import os
+import secrets
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -18,6 +19,10 @@ from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session, sessionmaker
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
+
+# A fresh signing key for every test run, so no secret is stored in the repository.
+# Set before any app module is imported, because settings are read at import time.
+os.environ.setdefault("JWT_SECRET", secrets.token_urlsafe(48))
 
 
 def validate_test_database_url(test_url: str | None, app_url: str | None) -> str:
@@ -88,6 +93,7 @@ def db_session(test_engine: Engine) -> Iterator[Session]:
 def client(test_engine: Engine) -> Iterator[TestClient]:
     """TestClient whose database dependency uses the test database."""
     from app.core.database import get_db
+    from app.core.limiter import limiter
     from app.main import app
 
     session_factory = sessionmaker(bind=test_engine, autoflush=False, expire_on_commit=False)
@@ -100,6 +106,8 @@ def client(test_engine: Engine) -> Iterator[TestClient]:
             session.close()
 
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
+    # Rate limits are kept in memory; start every test with a clean count.
+    limiter.reset()
+    with TestClient(app, raise_server_exceptions=False) as test_client:
         yield test_client
     app.dependency_overrides.clear()

@@ -15,11 +15,13 @@ import logging
 import sys
 from datetime import date
 
+from pydantic import ValidationError
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.config import AppEnv, Settings, get_settings
 from app.core.database import SessionLocal
+from app.core.demo import DEMO_USERS
 from app.core.security import PasswordPolicyError, hash_password, validate_password
 from app.models import AuditLog, Base, Employee, User
 
@@ -69,16 +71,6 @@ EMPLOYEES_PER_DEPARTMENT = 6
 # Employee codes with a status other than active, so leave and leaver
 # screens have realistic data to show.
 NON_ACTIVE_STATUSES = {"E0016": "on_leave", "E0029": "left"}
-
-# (login email, role, linked employee code)
-# The manager and the employee share 営業部, so department isolation can be
-# checked against real data: the manager sees the employee, other departments do not.
-DEMO_USERS: tuple[tuple[str, str, str], ...] = (
-    ("admin@demo", "super_admin", "E0001"),
-    ("it@demo", "it_admin", "E0002"),
-    ("manager@demo", "manager", "E0007"),
-    ("employee@demo", "employee", "E0010"),
-)
 
 
 class SeedRefusedError(RuntimeError):
@@ -134,6 +126,9 @@ def build_employees() -> list[Employee]:
 def build_users(password: str, employees_by_code: dict[str, Employee]) -> list[User]:
     """Create the four demo logins, each linked to an employee record.
 
+    The manager and the employee share 営業部, so department isolation can be
+    checked against real data.
+
     The password is hashed once and reused; bcrypt salts make every hash unique
     anyway, and hashing four times would only slow the seed down.
     """
@@ -185,7 +180,13 @@ def run_seed(session: Session, settings: Settings) -> dict[str, int]:
 def main() -> int:
     """Command-line entry point. Returns the process exit code."""
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    settings = get_settings()
+    try:
+        settings = get_settings()
+    except ValidationError as exc:
+        # Report which settings are wrong without echoing their values.
+        names = ", ".join(str(error["loc"][0]).upper() for error in exc.errors())
+        logger.error("Seed refused: invalid or missing settings: %s", names)
+        return 2
     try:
         with SessionLocal() as session:
             counts = run_seed(session, settings)

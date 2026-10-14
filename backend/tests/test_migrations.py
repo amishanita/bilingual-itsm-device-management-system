@@ -1,6 +1,8 @@
 """Phase 2 tests: Alembic migrations against an empty PostgreSQL database."""
 
 import os
+import subprocess
+import sys
 
 from alembic import command
 from alembic.autogenerate import compare_metadata
@@ -9,7 +11,7 @@ from sqlalchemy import inspect, text
 from sqlalchemy.engine import Engine
 
 from app.models import Base
-from tests.conftest import alembic_config
+from tests.conftest import BACKEND_DIR, alembic_config
 
 EXPECTED_TABLES = {
     "users",
@@ -119,3 +121,19 @@ def test_0002_keeps_existing_data_and_downgrades_cleanly(test_engine: Engine) ->
 
     command.downgrade(config, "base")
     command.upgrade(config, "head")
+
+
+def test_migrations_do_not_need_application_secrets() -> None:
+    """alembic must run with only DATABASE_URL set, as in CI before secrets exist."""
+    env = {k: v for k, v in os.environ.items() if k not in {"JWT_SECRET", "DEMO_PASSWORD"}}
+    env["DATABASE_URL"] = os.environ["TEST_DATABASE_URL"]
+    result = subprocess.run(  # noqa: S603 - fixed command, no user input
+        [sys.executable, "-m", "alembic", "current"],
+        cwd=BACKEND_DIR,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "(head)" in result.stdout

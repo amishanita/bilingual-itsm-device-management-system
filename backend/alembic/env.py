@@ -5,7 +5,7 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import create_engine, pool
 
-from app.core.config import get_settings
+from app.core.config import get_database_settings
 from app.models import Base
 
 config = context.config
@@ -19,7 +19,7 @@ target_metadata = Base.metadata
 def get_url() -> str:
     """Use an explicitly passed URL (tests set one), otherwise DATABASE_URL."""
     explicit = config.attributes.get("database_url")
-    return explicit or get_settings().database_url
+    return explicit or get_database_settings().database_url
 
 
 def run_migrations_offline() -> None:

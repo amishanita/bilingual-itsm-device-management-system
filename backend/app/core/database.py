@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.core.config import get_settings
+from app.core.config import get_database_settings
 
 
 def build_engine(database_url: str) -> Engine:
@@ -18,7 +18,7 @@ def build_engine(database_url: str) -> Engine:
     return create_engine(database_url, pool_pre_ping=True)
 
 
-engine = build_engine(get_settings().database_url)
+engine = build_engine(get_database_settings().database_url)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
