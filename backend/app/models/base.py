@@ -33,7 +33,9 @@ ASSET_STATUSES = (
     "retired",
 )
 # Statuses in which a device is held by an employee (assets.assigned_to is set).
-HELD_ASSET_STATUSES = ("assigned", "on_loan")
+# A device in repair keeps its holder (approved decision); the holder is cleared
+# when the device moves from repair to ready.
+HELD_ASSET_STATUSES = ("assigned", "on_loan", "repair")
 COMPLIANCE_STATES = ("compliant", "non_compliant", "unknown")
 LOAN_CONDITIONS = ("ok", "damaged", "missing_parts")
 TICKET_CATEGORIES = (

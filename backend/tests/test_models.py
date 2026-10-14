@@ -7,7 +7,7 @@ from collections.abc import Callable
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -84,10 +84,24 @@ def test_unheld_asset_cannot_have_a_holder(db_session: Session) -> None:
     )
 
 
-def test_assigned_and_on_loan_assets_accept_a_holder(db_session: Session) -> None:
+def test_held_statuses_accept_a_holder(db_session: Session) -> None:
     employee = make_employee(db_session)
     make_asset(db_session, "PC-T001", status="assigned", assigned_to=employee.id)
     make_asset(db_session, "PC-T002", status="on_loan", assigned_to=employee.id)
+    make_asset(db_session, "PC-T003", status="repair", assigned_to=employee.id)
+
+
+def test_repair_keeps_the_holder(db_session: Session) -> None:
+    """Approved decision: a device in repair still belongs to its holder."""
+    assert_rejected(db_session, lambda: make_asset(db_session, status="repair"))
+
+
+@pytest.mark.parametrize("status", ["ready", "returned", "wiped", "retired"])
+def test_holder_must_be_cleared_outside_held_statuses(db_session: Session, status: str) -> None:
+    employee = make_employee(db_session)
+    assert_rejected(
+        db_session, lambda: make_asset(db_session, status=status, assigned_to=employee.id)
+    )
 
 
 @pytest.mark.parametrize(
@@ -252,3 +266,34 @@ def test_pending_chat_action_requires_an_expiry(db_session: Session) -> None:
         )
     )
     db_session.flush()
+
+
+def add_task(session: Session, asset: Asset, run_no: int, step_no: int) -> None:
+    session.add(
+        KittingTask(asset_id=asset.id, run_no=run_no, step_no=step_no, step_en="S", step_ja="手順")
+    )
+    session.flush()
+
+
+def test_kitting_step_is_unique_within_a_run(db_session: Session) -> None:
+    asset = make_asset(db_session, status="kitting")
+    add_task(db_session, asset, 1, 1)
+    assert_rejected(db_session, lambda: add_task(db_session, asset, 1, 1))
+
+
+def test_rekit_keeps_earlier_runs(db_session: Session) -> None:
+    """Approved decision: a re-kit adds run 2 next to run 1 instead of replacing it."""
+    asset = make_asset(db_session, status="kitting")
+    add_task(db_session, asset, 1, 1)
+    add_task(db_session, asset, 2, 1)
+    runs = db_session.scalars(select(KittingTask.run_no).where(KittingTask.asset_id == asset.id))
+    assert sorted(runs) == [1, 2]
+
+
+def test_kitting_run_defaults_to_one(db_session: Session) -> None:
+    asset = make_asset(db_session, status="kitting")
+    task = KittingTask(asset_id=asset.id, step_no=1, step_en="S", step_ja="手順")
+    db_session.add(task)
+    db_session.flush()
+    db_session.refresh(task)
+    assert task.run_no == 1

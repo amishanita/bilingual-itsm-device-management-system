@@ -33,7 +33,8 @@ class Asset(TimestampMixin, Base):
             "warranty_end IS NULL OR purchase_date IS NULL OR warranty_end >= purchase_date",
             name="warranty_after_purchase",
         ),
-        # Business rule: assigned_to is set exactly when the device is assigned or on loan.
+        # Business rule: assigned_to is set exactly when the device is assigned, on loan,
+        # or in repair.
         # Enforcing it here means no code path can leave a holder on an unheld device.
         CheckConstraint(
             f"({in_list('status', HELD_ASSET_STATUSES)}) = (assigned_to IS NOT NULL)",
