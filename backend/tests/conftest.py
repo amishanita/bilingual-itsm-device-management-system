@@ -7,12 +7,17 @@ create and drop tables in that database, so this guard protects real data.
 
 import os
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
+from alembic import command
+from alembic.config import Config
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session, sessionmaker
+
+BACKEND_DIR = Path(__file__).resolve().parent.parent
 
 
 def validate_test_database_url(test_url: str | None, app_url: str | None) -> str:
@@ -40,12 +45,43 @@ def pytest_configure(config: pytest.Config) -> None:
         raise pytest.UsageError(f"Unsafe test database configuration: {exc}") from exc
 
 
+def alembic_config(database_url: str) -> Config:
+    """Alembic config pointed at an explicit database instead of DATABASE_URL."""
+    config = Config(str(BACKEND_DIR / "alembic.ini"))
+    config.attributes["database_url"] = database_url
+    return config
+
+
 @pytest.fixture(scope="session")
 def test_engine() -> Iterator[Engine]:
-    """Engine bound to the validated test database."""
-    engine = create_engine(os.environ["TEST_DATABASE_URL"], pool_pre_ping=True)
+    """Engine bound to the validated test database, migrated from empty to head.
+
+    Downgrading to base first means every run starts from an empty schema,
+    which also exercises the full downgrade path.
+    """
+    url = os.environ["TEST_DATABASE_URL"]
+    config = alembic_config(url)
+    command.downgrade(config, "base")
+    command.upgrade(config, "head")
+    engine = create_engine(url, pool_pre_ping=True)
     yield engine
     engine.dispose()
+
+
+@pytest.fixture
+def db_session(test_engine: Engine) -> Iterator[Session]:
+    """Session inside an outer transaction that is always rolled back.
+
+    Commits inside the test become savepoints, so nothing a test writes survives it.
+    """
+    with test_engine.connect() as connection:
+        outer = connection.begin()
+        session = Session(bind=connection, join_transaction_mode="create_savepoint")
+        try:
+            yield session
+        finally:
+            session.close()
+            outer.rollback()
 
 
 @pytest.fixture

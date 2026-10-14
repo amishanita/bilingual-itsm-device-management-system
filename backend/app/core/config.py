@@ -3,6 +3,7 @@
 from enum import StrEnum
 from functools import lru_cache
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -27,6 +28,8 @@ class Settings(BaseSettings):
     app_env: AppEnv = AppEnv.DEVELOPMENT
     database_url: str
     frontend_origin: str = "http://localhost:8080"
+    # Only the seed script needs this. SecretStr keeps it out of logs and reprs.
+    demo_password: SecretStr | None = None
 
 
 @lru_cache

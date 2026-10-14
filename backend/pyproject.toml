@@ -13,8 +13,13 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "S", "N", "ANN"]
-# S101: assert is the normal way to write pytest checks.
-per-file-ignores = { "tests/**" = ["S101"] }
+# Tests: assert is the normal pytest style, and test passwords are fixtures, not secrets.
+# Generated migrations keep long SQL CHECK expressions on one line.
+per-file-ignores = { "tests/**" = ["S101", "S105", "S106"], "alembic/versions/**" = ["E501"] }
+
+# The local alembic/ folder would otherwise make Ruff treat the package as first-party.
+[tool.ruff.lint.isort]
+known-third-party = ["alembic"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
