@@ -11,7 +11,7 @@ from app.core.database import check_database
 from app.core.deps import DbSession
 from app.core.errors import AppError, register_error_handlers
 from app.core.limiter import limiter
-from app.routers import auth
+from app.routers import auth, employees, users
 
 logger = logging.getLogger(__name__)
 
@@ -49,4 +49,6 @@ def health(db: DbSession) -> dict[str, str]:
 
 
 api.include_router(auth.router)
+api.include_router(users.router)
+api.include_router(employees.router)
 app.include_router(api)

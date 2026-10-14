@@ -71,3 +71,22 @@ def require_role(*roles: str) -> Callable[[User], User]:
         return user
 
     return check_role
+
+
+# Role groups. super_admin has full access, so it is included wherever it_admin is.
+ADMIN_ROLES = ("it_admin", "super_admin")
+STAFF_READ_ROLES = ("manager", "it_admin", "super_admin")
+
+SuperAdmin = Annotated[User, Depends(require_role("super_admin"))]
+ItAdmin = Annotated[User, Depends(require_role(*ADMIN_ROLES))]
+ManagerOrAdmin = Annotated[User, Depends(require_role(*STAFF_READ_ROLES))]
+
+
+def manager_department(user: User) -> str | None:
+    """Return the department a manager may see (Part B.2).
+
+    The department comes from the employee record linked to the manager's login,
+    never from the request. A manager with no linked employee gets None and
+    therefore sees no department-scoped data.
+    """
+    return user.employee.department if user.employee is not None else None

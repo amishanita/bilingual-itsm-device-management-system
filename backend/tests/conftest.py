@@ -111,3 +111,17 @@ def client(test_engine: Engine) -> Iterator[TestClient]:
     with TestClient(app, raise_server_exceptions=False) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def db(test_engine: Engine) -> Iterator[Session]:
+    """Freshly seeded demo data (4 logins, 30 employees) for each test.
+
+    The seed commits for real, so API calls made through the client see the data.
+    """
+    from app import seed
+    from tests.helpers import make_settings
+
+    with Session(test_engine) as session:
+        seed.run_seed(session, make_settings())
+        yield session

@@ -4,9 +4,11 @@ from collections.abc import Iterator
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import get_database_settings
+from app.core.errors import AppError
 
 
 def build_engine(database_url: str) -> Engine:
@@ -34,3 +36,12 @@ def get_db() -> Iterator[Session]:
 def check_database(session: Session) -> None:
     """Run a trivial query. Raises a SQLAlchemy error if the database is unreachable."""
     session.execute(text("SELECT 1"))
+
+
+def commit_or_conflict(db: Session) -> None:
+    """Commit, turning a unique-constraint race into a 400 instead of a 500."""
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise AppError(400, "DUPLICATE_VALUE", "A record with this value already exists.") from exc

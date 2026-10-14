@@ -1,66 +1,29 @@
 """Phase 3 tests: login, tokens, profile, language, password change, rate limit, errors."""
 
 import os
-from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 
 import jwt
 import pytest
 from fastapi.testclient import TestClient
-from pydantic import SecretStr
 from sqlalchemy import select, update
-from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from app import seed
 from app.core.config import AppEnv, Settings, get_settings
 from app.core.deps import get_current_user, require_role
 from app.core.errors import AppError
 from app.core.security import create_access_token, verify_password
 from app.models import AuditLog, User
 from app.services import audit_service
-
-PASSWORD = "demo-pass-1234"
-
-
-def make_settings(app_env: AppEnv = AppEnv.DEVELOPMENT) -> Settings:
-    return Settings(
-        _env_file=None,
-        app_env=app_env,
-        database_url=os.environ["TEST_DATABASE_URL"],
-        jwt_secret=SecretStr(os.environ["JWT_SECRET"]),
-        demo_password=SecretStr(PASSWORD),
-    )
-
-
-@pytest.fixture
-def db(test_engine: Engine) -> Iterator[Session]:
-    """Freshly seeded demo data for each test."""
-    with Session(test_engine) as session:
-        seed.run_seed(session, make_settings())
-        yield session
-
-
-def login(client: TestClient, email: str = "employee@demo", password: str = PASSWORD) -> dict:
-    return client.post("/api/auth/login", json={"email": email, "password": password}).json()
-
-
-def auth(token: str) -> dict[str, str]:
-    return {"Authorization": f"Bearer {token}"}
-
-
-def token_for(client: TestClient, email: str = "employee@demo") -> str:
-    return login(client, email)["access_token"]
-
-
-def user_by_email(db: Session, email: str) -> User:
-    db.expire_all()
-    return db.scalars(select(User).where(User.email == email)).one()
-
-
-def error_code(response: object) -> str:
-    return response.json()["detail"]["code"]  # type: ignore[attr-defined]
-
+from tests.helpers import (
+    PASSWORD,
+    auth,
+    error_code,
+    login,
+    make_settings,
+    token_for,
+    user_by_email,
+)
 
 # Login
 
