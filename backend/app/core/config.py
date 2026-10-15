@@ -18,6 +18,8 @@ class AppEnv(StrEnum):
 # The value shipped in .env.example. Starting with it would mean every copy of the
 # project signs tokens with the same publicly known key.
 JWT_SECRET_PLACEHOLDER = "replace-with-a-long-random-value"  # noqa: S105 - known-bad value to reject
+# The example value in .env.example. It is public, so it must never become a real password.
+DEMO_PASSWORD_PLACEHOLDER = "replace-with-a-demo-password"  # noqa: S105 - known-bad value to reject
 JWT_SECRET_MIN_LENGTH = 32
 
 

@@ -23,7 +23,7 @@ from sqlalchemy import select, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
-from app.core.config import AppEnv, Settings, get_settings
+from app.core.config import DEMO_PASSWORD_PLACEHOLDER, AppEnv, Settings, get_settings
 from app.core.database import SessionLocal
 from app.core.demo import DEMO_USERS
 from app.core.security import PasswordPolicyError, hash_password, validate_password
@@ -392,6 +392,10 @@ def check_can_seed(settings: Settings) -> str:
     if settings.demo_password is None or not settings.demo_password.get_secret_value():
         raise SeedRefusedError("DEMO_PASSWORD is not set.")
     password = settings.demo_password.get_secret_value()
+    if password == DEMO_PASSWORD_PLACEHOLDER:
+        raise SeedRefusedError(
+            "DEMO_PASSWORD is still the example value from .env.example. Choose your own."
+        )
     try:
         validate_password(password)
     except PasswordPolicyError as exc:

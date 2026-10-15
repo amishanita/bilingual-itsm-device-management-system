@@ -15,7 +15,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from app import seed
-from app.core.config import AppEnv, Settings
+from app.core.config import DEMO_PASSWORD_PLACEHOLDER, AppEnv, Settings
 from app.core.security import verify_password
 from app.models import AuditLog, Employee, User
 
@@ -56,6 +56,12 @@ def test_seed_refuses_to_run_in_production(session: Session) -> None:
 def test_seed_refuses_missing_or_invalid_password(session: Session, password: str | None) -> None:
     with pytest.raises(seed.SeedRefusedError):
         seed.run_seed(session, settings_for(AppEnv.DEMO, password))
+
+
+def test_seed_refuses_the_example_password(session: Session) -> None:
+    """The value in .env.example is public; demo accounts must not use it."""
+    with pytest.raises(seed.SeedRefusedError, match="example value"):
+        seed.run_seed(session, settings_for(AppEnv.DEMO, DEMO_PASSWORD_PLACEHOLDER))
 
 
 def test_seed_creates_expected_users_and_employees(session: Session) -> None:
