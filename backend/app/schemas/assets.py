@@ -222,3 +222,10 @@ class HistoryEntry(BaseModel):
     actor_email: str | None
     detail: dict[str, Any]
     created_at: datetime
+
+
+class ImportResult(BaseModel):
+    """Result of a successful CSV import."""
+
+    created: int
+    asset_tags: list[str]

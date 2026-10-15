@@ -7,7 +7,7 @@ lifecycle service.
 
 from datetime import UTC, datetime
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Response, UploadFile
 from sqlalchemy import exists, func, or_, select
 from sqlalchemy.orm import selectinload
 
@@ -25,10 +25,11 @@ from app.schemas.assets import (
     DeviceDetailOut,
     DeviceDetailUpdate,
     HistoryEntry,
+    ImportResult,
     StatusChange,
 )
 from app.schemas.common import Limit, Offset, Page, SearchText, like_pattern
-from app.services import asset_service
+from app.services import asset_service, csv_service
 
 router = APIRouter(prefix="/assets", tags=["assets"])
 
@@ -133,6 +134,31 @@ def create_asset(body: AssetCreate, db: DbSession, admin: ItAdmin) -> AssetDetai
     asset = asset_service.create_asset(db, body.model_dump(), admin)
     commit_or_conflict(db)
     return to_detail_out(db, asset, admin)
+
+
+@router.get("/export.csv", response_class=Response)
+def export_csv(db: DbSession, admin: ItAdmin) -> Response:
+    """Download every asset the caller may see as CSV (UTF-8 with BOM, formula-safe)."""
+    body = csv_service.export_assets(db, asset_service.scope_assets(select(Asset), admin))
+    filename = f"assets-{datetime.now(UTC).strftime('%Y%m%d')}.csv"
+    return Response(
+        content=body.encode("utf-8"),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post("/import", response_model=ImportResult, status_code=201)
+async def import_csv(file: UploadFile, db: DbSession, admin: ItAdmin) -> ImportResult:
+    """Create assets from a CSV file. Any invalid row means nothing is saved.
+
+    Only one byte more than the limit is read, so an oversized upload is
+    refused without loading it all into memory.
+    """
+    data = await file.read(csv_service.MAX_IMPORT_BYTES + 1)
+    created = csv_service.import_assets(db, data, admin)
+    commit_or_conflict(db)
+    return ImportResult(created=len(created), asset_tags=[a.asset_tag for a in created])
 
 
 @router.get("/{asset_id}", response_model=AssetDetailOut)

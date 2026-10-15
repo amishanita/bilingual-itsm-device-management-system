@@ -39,26 +39,28 @@ class AppError(Exception):
         code: str,
         message: str,
         headers: dict[str, str] | None = None,
+        extra: dict[str, object] | None = None,
     ) -> None:
         super().__init__(message)
         self.status_code = status_code
         self.code = code
         self.message = message
         self.headers = headers
+        # Extra keys added to "detail" next to code and message, for example
+        # the row-level errors of a CSV import. Never internal exception data.
+        self.extra = extra or {}
 
 
-def error_body(code: str, message: str) -> dict[str, dict[str, str]]:
+def error_body(code: str, message: str) -> dict[str, dict[str, object]]:
     """Build the standard error body."""
     return {"detail": {"code": code, "message": message}}
 
 
 async def handle_app_error(_request: Request, exc: AppError) -> JSONResponse:
     """Return an AppError in the standard format."""
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=error_body(exc.code, exc.message),
-        headers=exc.headers,
-    )
+    content = error_body(exc.code, exc.message)
+    content["detail"].update(exc.extra)
+    return JSONResponse(status_code=exc.status_code, content=content, headers=exc.headers)
 
 
 async def handle_http_error(_request: Request, exc: StarletteHTTPException) -> JSONResponse:
