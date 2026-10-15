@@ -67,6 +67,11 @@ def used_keys() -> set[str]:
                 continue  # file names such as "dashboard.html", not keys
             if candidate.split(".", 1)[0] in NAMESPACES:
                 keys.add(candidate)
+        # Keys passed to t() or given as a label, hint, or message key are keys
+        # even in a namespace that does not exist yet, so a new page cannot
+        # slip through with a whole namespace missing.
+        keys |= set(re.findall(r'\bt\(\s*"([a-z_]+\.[A-Za-z_.]+)"', text))
+        keys |= set(re.findall(r'\b(?:label|hint|key|countKey):\s*"([a-z_]+\.[A-Za-z_.]+)"', text))
     # Built at runtime as `lang.${code}` for each language.
     keys |= {"lang.ja", "lang.en"}
     return keys

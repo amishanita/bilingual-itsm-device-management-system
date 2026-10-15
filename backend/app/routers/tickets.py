@@ -7,7 +7,7 @@ ones. Changes and comments are for the requester or IT staff.
 from fastapi import APIRouter
 from sqlalchemy import func, or_, select
 
-from app.core.deps import CurrentUser, DbSession
+from app.core.deps import ADMIN_ROLES, CurrentUser, DbSession, ItAdmin
 from app.models import Asset, Employee, Ticket, TicketComment, User
 from app.schemas.common import Limit, Offset, Page, SearchText, like_pattern
 from app.schemas.tickets import (
@@ -173,6 +173,19 @@ def create_ticket(body: TicketCreate, db: DbSession, user: CurrentUser) -> Ticke
     db.commit()
     db.refresh(ticket)
     return build_detail(db, ticket, user)
+
+
+@router.get("/assignees", response_model=list[PersonRef])
+def list_assignees(db: DbSession, _admin: ItAdmin) -> list[PersonRef]:
+    """Active IT staff who can be assigned a ticket, for the assignee picker.
+
+    Login management (GET /users) is super_admin only, so IT admins need this
+    narrower list: just id and email of people who can take a ticket.
+    """
+    staff = db.scalars(
+        select(User).where(User.role.in_(ADMIN_ROLES), User.is_active).order_by(User.email)
+    )
+    return [PersonRef(id=u.id, email=u.email) for u in staff]
 
 
 @router.get("/{ticket_id}", response_model=TicketDetailOut)

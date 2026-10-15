@@ -1,0 +1,83 @@
+<!doctype html>
+<!-- Employee list with search and filters, and the add-employee form (IT staff). -->
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Tamang Amish">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:8000; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <title data-i18n="employees.title"></title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/employees.js"></script>
+</head>
+<body>
+  <header id="topbar"></header>
+  <main class="page" aria-labelledby="page-heading">
+    <div class="page-header page-header-actions">
+      <h1 id="page-heading" data-i18n="employees.title"></h1>
+      <button id="add-toggle" class="button button-primary" type="button" aria-expanded="false"
+              aria-controls="add-panel" data-i18n="employees.add" hidden></button>
+    </div>
+    <p id="add-success" class="notice" role="status" hidden></p>
+
+    <section id="add-panel" class="panel" aria-labelledby="add-heading" hidden>
+      <h2 id="add-heading" data-i18n="employees.add_heading"></h2>
+      <form id="add-form" novalidate>
+        <div id="add-fields" class="form-grid"></div>
+        <p id="add-error" class="alert" role="alert" hidden></p>
+        <div class="form-actions">
+          <button class="button button-primary" type="submit" data-i18n="common.save"></button>
+          <button id="add-cancel" class="button button-quiet" type="button" data-i18n="common.cancel"></button>
+        </div>
+      </form>
+    </section>
+
+    <form id="filters" class="panel filters filters-3" role="search" data-i18n-aria-label="employees.filters">
+      <div class="filter-search">
+        <label for="filter-q" data-i18n="common.search"></label>
+        <input id="filter-q" name="q" type="search" maxlength="100" data-i18n-placeholder="employees.search_placeholder">
+      </div>
+      <div>
+        <label for="filter-department" data-i18n="field.department"></label>
+        <select id="filter-department" name="department"></select>
+      </div>
+      <div>
+        <label for="filter-status" data-i18n="field.status"></label>
+        <select id="filter-status" name="status"></select>
+      </div>
+      <div class="filter-actions">
+        <button id="filter-reset" class="button button-quiet" type="button" data-i18n="devices.reset"></button>
+      </div>
+    </form>
+
+    <p id="page-status" class="notice" role="status" data-i18n="common.loading"></p>
+
+    <section id="results" class="panel" aria-labelledby="results-heading" hidden>
+      <h2 id="results-heading" class="visually-hidden" data-i18n="employees.results"></h2>
+      <p id="result-count" class="muted" aria-live="polite"></p>
+      <div class="table-wrap">
+        <table class="data-table" id="employee-table">
+          <thead><tr>
+            <th scope="col" data-i18n="field.employee_code"></th>
+            <th scope="col" data-i18n="field.name"></th>
+            <th scope="col" data-i18n="field.department"></th>
+            <th scope="col" data-i18n="field.position"></th>
+            <th scope="col" data-i18n="field.status"></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p id="no-results" class="muted" data-i18n="employees.no_results" hidden></p>
+      <nav class="pager" data-i18n-aria-label="common.pagination">
+        <button id="page-prev" class="button button-quiet" type="button" data-i18n="common.prev"></button>
+        <span id="page-info" class="muted"></span>
+        <button id="page-next" class="button button-quiet" type="button" data-i18n="common.next"></button>
+      </nav>
+    </section>
+  </main>
+  <noscript>JavaScript is required. / JavaScriptを有効にしてください。</noscript>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!doctype html>
+<!-- One ticket: details, status changes, assignment, edits, and comments. -->
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Tamang Amish">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:8000; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <title data-i18n="ticket.page_title"></title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/ticket.js"></script>
+</head>
+<body>
+  <header id="topbar"></header>
+  <main class="page" aria-labelledby="page-heading">
+    <p class="breadcrumb"><a href="tickets.html" data-i18n="ticket.back"></a></p>
+    <div class="page-header">
+      <h1 id="page-heading" data-i18n="ticket.page_title"></h1>
+      <p id="ticket-summary" class="device-summary"></p>
+    </div>
+
+    <p id="page-status" class="notice" role="status" data-i18n="common.loading"></p>
+    <p id="action-message" class="notice" role="status" hidden></p>
+
+    <div id="ticket" hidden>
+      <section id="actions-panel" class="panel" aria-labelledby="actions-heading" hidden>
+        <h2 id="actions-heading" data-i18n="ticket.actions"></h2>
+        <div id="action-buttons" class="action-buttons"></div>
+        <p id="action-error" class="alert" role="alert" hidden></p>
+      </section>
+
+      <div class="panel-grid">
+        <section class="panel" aria-labelledby="info-heading">
+          <div class="panel-heading">
+            <h2 id="info-heading" data-i18n="ticket.info"></h2>
+            <button id="info-edit" class="button button-quiet button-small" type="button" data-i18n="common.edit" hidden></button>
+          </div>
+          <dl id="info-list" class="field-list"></dl>
+          <form id="info-form" novalidate hidden>
+            <div id="info-fields" class="form-grid"></div>
+            <p id="info-error" class="alert" role="alert" hidden></p>
+            <div class="form-actions">
+              <button class="button button-primary" type="submit" data-i18n="common.save"></button>
+              <button id="info-cancel" class="button button-quiet" type="button" data-i18n="common.cancel"></button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel" aria-labelledby="description-heading">
+          <h2 id="description-heading" data-i18n="ticket.description"></h2>
+          <p id="description" class="ticket-text"></p>
+        </section>
+      </div>
+
+      <section class="panel" aria-labelledby="comments-heading">
+        <h2 id="comments-heading" data-i18n="ticket.comments"></h2>
+        <p id="comments-empty" class="muted" data-i18n="ticket.comments_empty" hidden></p>
+        <ol id="comment-list" class="comments"></ol>
+        <form id="comment-form" class="comment-form" novalidate hidden>
+          <label for="comment-body" data-i18n="ticket.add_comment"></label>
+          <textarea id="comment-body" name="body" rows="3" maxlength="5000" required></textarea>
+          <p id="comment-error" class="alert" role="alert" hidden></p>
+          <div class="form-actions">
+            <button class="button button-primary" type="submit" data-i18n="ticket.post_comment"></button>
+          </div>
+        </form>
+        <p id="comments-closed" class="muted" data-i18n="ticket.comments_closed" hidden></p>
+      </section>
+    </div>
+  </main>
+  <noscript>JavaScript is required. / JavaScriptを有効にしてください。</noscript>
+</body>
+</html>

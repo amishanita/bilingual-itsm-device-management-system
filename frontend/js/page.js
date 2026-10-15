@@ -42,6 +42,17 @@ export function el(tag, attributes = {}, text) {
 }
 
 /**
+ * A date as "YYYY-MM-DD" in the browser's time zone (toISOString would use UTC
+ * and give yesterday's date in Japan before 9:00).
+ * @param {Date} date
+ * @returns {string}
+ */
+export function localDate(date) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/**
  * Format a whole number for the active language (1,234 in both ja and en).
  * @param {number} value
  * @returns {string}

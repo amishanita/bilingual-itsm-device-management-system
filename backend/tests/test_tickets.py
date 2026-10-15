@@ -444,3 +444,31 @@ def test_failed_audit_rolls_back_the_change(
     assert put(client, db, ticket, IT, status="in_progress").status_code == 500
     db.expire_all()
     assert db.get(Ticket, ticket.id).status == "open"
+
+
+# Assignee picker
+
+
+def test_assignee_list_shows_active_it_staff(client: TestClient, db: Session) -> None:
+    response = client.get("/api/tickets/assignees", headers=headers_as(db, IT))
+    assert response.status_code == 200
+    assert response.json() == [
+        {"id": db.scalar(select(User.id).where(User.email == email)), "email": email}
+        for email in ("admin@demo", "it@demo")
+    ]
+
+
+def test_assignee_list_leaves_out_deactivated_staff(client: TestClient, db: Session) -> None:
+    db.execute(update(User).where(User.email == ADMIN).values(is_active=False))
+    db.commit()
+    emails = [
+        p["email"] for p in client.get("/api/tickets/assignees", headers=headers_as(db, IT)).json()
+    ]
+    assert emails == ["it@demo"]
+
+
+@pytest.mark.parametrize("email", [MANAGER, EMPLOYEE])
+def test_assignee_list_is_for_it_staff_only(client: TestClient, db: Session, email: str) -> None:
+    response = client.get("/api/tickets/assignees", headers=headers_as(db, email))
+    assert response.status_code == 403
+    assert error_code(response) == "FORBIDDEN"

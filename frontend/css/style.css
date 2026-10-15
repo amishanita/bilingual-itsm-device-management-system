@@ -940,6 +940,129 @@ progress {
   cursor: pointer;
 }
 
+/* Employees, users, tickets */
+
+.badge-emp-active,
+.badge-priority-low {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.badge-emp-on_leave,
+.badge-priority-medium {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.badge-priority-high {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.badge-priority-critical {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.badge-emp-left {
+  background: var(--color-neutral-bg);
+  color: var(--color-muted);
+}
+
+.badge-role-super_admin {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.badge-role-it_admin {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.badge-role-manager {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.badge-row .badge + .badge {
+  margin-left: var(--space-1);
+}
+
+.you-badge {
+  margin-left: var(--space-2);
+}
+
+.data-table tr.inactive td {
+  color: var(--color-muted);
+}
+
+.text-danger {
+  color: var(--color-danger);
+}
+
+.filter-check {
+  align-self: end;
+  min-height: 44px;
+}
+
+.leaver-panel {
+  border-color: #f5c2bd;
+}
+
+.leaver-panel h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+.confirm-box {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius);
+  background: var(--color-danger-bg);
+}
+
+.confirm-box p {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* What people typed: kept as written, line breaks included. */
+.ticket-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.comments {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comment {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.comment.own {
+  background: var(--color-info-bg);
+}
+
+.comment-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-1);
+  font-size: 0.85rem;
+}
+
+.comment-form {
+  margin-top: var(--space-4);
+}
+
 /* Wider screens: menu always visible on one line. */
 @media (min-width: 900px) {
   .menu-toggle {
@@ -981,6 +1104,10 @@ progress {
 
   .filters {
     grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .filters-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .form-grid {
