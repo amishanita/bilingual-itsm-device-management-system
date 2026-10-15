@@ -93,6 +93,16 @@ export function buildFields(container, fields, values = {}, idPrefix = "f") {
       wrapper.append(el("p", { class: "hint", "data-i18n": field.hint }, t(field.hint)));
     }
     wrapper.append(el("p", { class: "field-error", id: `${id}-error`, hidden: "" }));
+    // Once the person changes a marked field, its old error no longer applies.
+    input.addEventListener("input", () => {
+      if (input.getAttribute("aria-invalid") === "true") {
+        input.removeAttribute("aria-invalid");
+        input.removeAttribute("aria-describedby");
+        const box = document.getElementById(`${id}-error`);
+        box.hidden = true;
+        box.textContent = "";
+      }
+    });
     container.append(wrapper);
   }
 }

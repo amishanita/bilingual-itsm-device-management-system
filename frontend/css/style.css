@@ -1063,6 +1063,58 @@ progress {
   margin-top: var(--space-4);
 }
 
+/* FAQ */
+
+.faq-group h2 {
+  margin: 0 0 var(--space-2);
+  font-size: 1.05rem;
+}
+
+.faq-item {
+  border-top: 1px solid var(--color-border);
+}
+
+.faq-item:first-of-type {
+  border-top: 0;
+}
+
+.faq-item summary {
+  padding: var(--space-3) 0;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.faq-body {
+  padding: 0 0 var(--space-4) var(--space-4);
+}
+
+.faq-footer {
+  margin: var(--space-3) 0;
+  font-size: 0.9rem;
+}
+
+.language-columns {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.language-columns fieldset {
+  min-width: 0;
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.language-columns legend {
+  padding: 0 var(--space-1);
+  font-weight: 700;
+}
+
+.language-columns textarea {
+  min-height: 220px;
+}
+
 /* Wider screens: menu always visible on one line. */
 @media (min-width: 900px) {
   .menu-toggle {
@@ -1116,5 +1168,9 @@ progress {
 
   .board {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+
+  .language-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

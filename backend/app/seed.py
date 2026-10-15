@@ -27,6 +27,7 @@ from app.core.config import DEMO_PASSWORD_PLACEHOLDER, AppEnv, Settings, get_set
 from app.core.database import SessionLocal
 from app.core.demo import DEMO_USERS
 from app.core.security import PasswordPolicyError, hash_password, validate_password
+from app.faq_seed import FAQ_ARTICLES
 from app.models import (
     Asset,
     AuditLog,
@@ -34,6 +35,7 @@ from app.models import (
     DeviceDetail,
     DeviceLoan,
     Employee,
+    FaqArticle,
     KittingTask,
     KittingTemplate,
     Ticket,
@@ -774,6 +776,23 @@ def build_tickets(
     return len(TICKET_STATUS_PLAN)
 
 
+def build_faq(session: Session, users_by_email: dict[str, User]) -> int:
+    """Add the 20 bilingual FAQ articles, last edited by the IT admin."""
+    editor = users_by_email["it@demo"].id
+    session.add_all(
+        FaqArticle(
+            category=category,
+            title_en=title_en,
+            body_en=body_en,
+            title_ja=title_ja,
+            body_ja=body_ja,
+            updated_by=editor,
+        )
+        for category, title_en, body_en, title_ja, body_ja in FAQ_ARTICLES
+    )
+    return len(FAQ_ARTICLES)
+
+
 def run_seed(session: Session, settings: Settings) -> dict[str, int]:
     """Replace all application data with demo data in one transaction.
 
@@ -796,6 +815,7 @@ def run_seed(session: Session, settings: Settings) -> dict[str, int]:
             session, {e.employee_code: e for e in employees}, users_by_email, now
         )
         ticket_count = build_tickets(session, employees, users_by_email, now)
+        faq_count = build_faq(session, users_by_email)
         # System action, so user_id is empty. No password data goes into the detail.
         session.add(
             AuditLog(
@@ -810,6 +830,7 @@ def run_seed(session: Session, settings: Settings) -> dict[str, int]:
                     "kitting_devices": kitting_count,
                     "loans": loan_count,
                     "tickets": ticket_count,
+                    "faq_articles": faq_count,
                 },
             )
         )
@@ -824,6 +845,7 @@ def run_seed(session: Session, settings: Settings) -> dict[str, int]:
         "kitting_devices": kitting_count,
         "loans": loan_count,
         "tickets": ticket_count,
+        "faq_articles": faq_count,
     }
 
 

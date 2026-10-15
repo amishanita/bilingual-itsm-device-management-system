@@ -11,7 +11,7 @@ from app.core.database import check_database
 from app.core.deps import DbSession
 from app.core.errors import AppError, register_error_handlers
 from app.core.limiter import limiter
-from app.routers import assets, auth, dashboard, employees, kitting, loans, tickets, users
+from app.routers import assets, auth, dashboard, employees, faq, kitting, loans, tickets, users
 
 logger = logging.getLogger(__name__)
 
@@ -56,4 +56,5 @@ api.include_router(kitting.router)
 api.include_router(loans.router)
 api.include_router(tickets.router)
 api.include_router(dashboard.router)
+api.include_router(faq.router)
 app.include_router(api)

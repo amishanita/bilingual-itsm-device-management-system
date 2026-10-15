@@ -73,6 +73,7 @@ def test_seed_creates_expected_users_and_employees(session: Session) -> None:
         "kitting_devices": 4,
         "loans": 8,
         "tickets": 80,
+        "faq_articles": 20,
     }
     assert counts(session) == (4, 30)
 

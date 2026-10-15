@@ -15,7 +15,7 @@ target-version = "py312"
 select = ["E", "F", "W", "I", "B", "UP", "S", "N", "ANN"]
 # Tests: assert is the normal pytest style, and test passwords are fixtures, not secrets.
 # Generated migrations keep long SQL CHECK expressions on one line.
-per-file-ignores = { "tests/**" = ["S101", "S105", "S106"], "alembic/versions/**" = ["E501"] }
+per-file-ignores = { "tests/**" = ["S101", "S105", "S106"], "alembic/versions/**" = ["E501"], "app/faq_seed.py" = ["E501"] }
 
 # The local alembic/ folder would otherwise make Ruff treat the package as first-party.
 [tool.ruff.lint.isort]

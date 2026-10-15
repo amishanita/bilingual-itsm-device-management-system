@@ -1,0 +1,72 @@
+<!doctype html>
+<!-- FAQ: articles by category with search; IT staff can add and edit articles in both languages. -->
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Tamang Amish">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:8000; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <title data-i18n="faq.title"></title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/faq.js"></script>
+</head>
+<body>
+  <header id="topbar"></header>
+  <main class="page" aria-labelledby="page-heading">
+    <div class="page-header page-header-actions">
+      <div>
+        <h1 id="page-heading" data-i18n="faq.title"></h1>
+        <p class="muted" data-i18n="faq.intro"></p>
+      </div>
+      <button id="add-toggle" class="button button-primary" type="button" aria-expanded="false"
+              aria-controls="edit-panel" data-i18n="faq.add" hidden></button>
+    </div>
+    <p id="faq-message" class="notice" role="status" hidden></p>
+
+    <section id="edit-panel" class="panel" aria-labelledby="edit-heading" hidden>
+      <h2 id="edit-heading"></h2>
+      <form id="edit-form" novalidate>
+        <div id="category-field"></div>
+        <div class="language-columns">
+          <fieldset>
+            <legend data-i18n="faq.lang_ja"></legend>
+            <div id="ja-fields"></div>
+          </fieldset>
+          <fieldset>
+            <legend data-i18n="faq.lang_en"></legend>
+            <div id="en-fields"></div>
+          </fieldset>
+        </div>
+        <p id="edit-error" class="alert" role="alert" hidden></p>
+        <div class="form-actions">
+          <button class="button button-primary" type="submit" data-i18n="common.save"></button>
+          <button id="edit-cancel" class="button button-quiet" type="button" data-i18n="common.cancel"></button>
+        </div>
+      </form>
+    </section>
+
+    <form id="filters" class="panel filters filters-3" role="search" data-i18n-aria-label="faq.search_label">
+      <div class="filter-search">
+        <label for="faq-q" data-i18n="common.search"></label>
+        <input id="faq-q" name="q" type="search" maxlength="100" data-i18n-placeholder="faq.search_placeholder">
+      </div>
+      <div>
+        <label for="faq-category" data-i18n="ticket.category"></label>
+        <select id="faq-category" name="category"></select>
+      </div>
+    </form>
+
+    <p id="page-status" class="notice" role="status" data-i18n="common.loading"></p>
+    <section id="results" aria-labelledby="results-heading" hidden>
+      <h2 id="results-heading" class="visually-hidden" data-i18n="faq.results"></h2>
+      <p id="result-count" class="muted" aria-live="polite"></p>
+      <div id="faq-list"></div>
+      <p id="no-results" class="muted panel" data-i18n="faq.no_results" hidden></p>
+    </section>
+  </main>
+  <noscript>JavaScript is required. / JavaScriptを有効にしてください。</noscript>
+</body>
+</html>

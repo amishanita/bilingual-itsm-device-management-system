@@ -96,9 +96,10 @@ jobs:
           counts=$(psql -h localhost -U itsm -d itsm -tA -c "
             SELECT concat_ws(',',
               (SELECT count(*) FROM users), (SELECT count(*) FROM employees),
-              (SELECT count(*) FROM assets), (SELECT count(*) FROM tickets))")
-          echo "users,employees,assets,tickets = $counts"
-          test "$counts" = "4,30,60,80"
+              (SELECT count(*) FROM assets), (SELECT count(*) FROM tickets),
+              (SELECT count(*) FROM faq_articles))")
+          echo "users,employees,assets,tickets,faq = $counts"
+          test "$counts" = "4,30,60,80,20"
 
       - name: Run tests
         run: pytest -q -p no:warnings
