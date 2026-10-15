@@ -60,7 +60,14 @@ def test_seed_refuses_missing_or_invalid_password(session: Session, password: st
 
 def test_seed_creates_expected_users_and_employees(session: Session) -> None:
     result = seed.run_seed(session, settings_for(AppEnv.DEMO))
-    assert result == {"employees": 30, "users": 4, "assets": 60, "kitting_devices": 4, "loans": 8}
+    assert result == {
+        "employees": 30,
+        "users": 4,
+        "assets": 60,
+        "kitting_devices": 4,
+        "loans": 8,
+        "tickets": 80,
+    }
     assert counts(session) == (4, 30)
 
     departments = Counter(session.scalars(select(Employee.department)))

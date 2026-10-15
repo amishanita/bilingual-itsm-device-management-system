@@ -1,9 +1,9 @@
 """Demo data loader. Run with: python -m app.seed
 
 Current scope: the four demo logins, 30 employees across five departments,
-60 devices with details, four kitting templates, four devices in kitting, and
-eight loans (four open, three of them overdue, and four returned).
-Later phases add tickets and FAQ articles.
+60 devices with details, four kitting templates, four devices in kitting,
+eight loans (four open, three of them overdue, and four returned), and 80
+helpdesk tickets with IT replies. A later phase adds FAQ articles.
 
 Safety rules (Part B.4):
 - Runs only when APP_ENV is development or demo, never production.
@@ -36,6 +36,8 @@ from app.models import (
     Employee,
     KittingTask,
     KittingTemplate,
+    Ticket,
+    TicketComment,
     User,
 )
 
@@ -282,6 +284,96 @@ KITTING_TEMPLATES: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
         ),
     ),
 )
+
+
+# Ticket text per category: (title, description). Requests are written the way
+# employees of a Japanese company would write them; ticket text is user data
+# and is never translated.
+TICKET_TEXTS: dict[str, tuple[tuple[str, str], ...]] = {
+    "password": (
+        (
+            "パスワードを忘れてログインできない",
+            "休み明けにPCへログインしようとしたところ、パスワードを思い出せません。リセットをお願いします。",
+        ),
+        (
+            "パスワードの有効期限切れの通知が出る",
+            "サインイン時に有効期限切れと表示されます。変更手順を教えてください。",
+        ),
+    ),
+    "laptop": (
+        (
+            "ノートPCの動作が遅い",
+            "起動やアプリの切り替えに時間がかかります。会議中に固まることもあります。",
+        ),
+        (
+            "ノートPCのバッテリーがすぐ切れる",
+            "満充電でも2時間ほどで切れてしまいます。外出が多いので困っています。",
+        ),
+    ),
+    "smartphone": (
+        (
+            "社用スマホでメールが受信できない",
+            "昨日から社用スマホのOutlookで新しいメールが届きません。",
+        ),
+        (
+            "社用スマホの画面が割れた",
+            "落としてしまい、画面の右下が割れています。操作はできますが交換を希望します。",
+        ),
+    ),
+    "tablet": (
+        (
+            "iPadの画面が反応しない",
+            "タッチしても反応しない部分があります。再起動しても改善しません。",
+        ),
+        ("共有iPadにアプリが表示されない", "貸出用のiPadに業務アプリが見当たりません。"),
+    ),
+    "vpn": (
+        ("自宅からVPNに接続できない", "在宅勤務中、VPN接続時にタイムアウトのエラーが出ます。"),
+        ("VPN接続が頻繁に切れる", "接続はできますが、10分ほどで切断されます。"),
+    ),
+    "email": (
+        ("Outlookでメールが同期されない", "受信トレイが昨日の午後から更新されていません。"),
+        (
+            "共有メールボックスを追加してほしい",
+            "営業窓口の共有メールボックスを閲覧できるようにしてください。",
+        ),
+    ),
+    "software": (
+        (
+            "Adobe Acrobatのインストール依頼",
+            "PDFの編集が必要になったため、Acrobatのインストールをお願いします。",
+        ),
+        ("Teamsで音声が聞こえない", "Teams会議で相手の声が聞こえません。スピーカーは正常です。"),
+    ),
+    "hardware": (
+        ("モニターが映らない", "外付けモニターに映像が出ません。ケーブルは差し直しました。"),
+        ("キーボードの一部キーが反応しない", "ノートPCのキーボードでEnterキーが効きにくいです。"),
+    ),
+    "network": (
+        (
+            "会議室のWi-Fiが不安定",
+            "3階の会議室でWi-Fiが頻繁に切れます。オンライン会議に支障があります。",
+        ),
+        ("プリンターが見つからない", "複合機がプリンター一覧に表示されず、印刷できません。"),
+    ),
+    "account": (
+        ("新入社員のアカウント作成依頼", "来月入社予定の社員のアカウント作成をお願いします。"),
+        (
+            "アカウントがロックされた",
+            "パスワードを何度か間違えてロックされました。解除をお願いします。",
+        ),
+    ),
+}
+
+# Seeded ticket statuses in order (80 in total).
+TICKET_STATUS_PLAN = ("open",) * 20 + ("in_progress",) * 20 + ("resolved",) * 15 + ("closed",) * 25
+TICKET_PRIORITY_CYCLE = ("medium", "low", "high", "medium", "critical", "medium", "high", "low")
+DEVICE_CATEGORY_TYPES = {
+    "laptop": ("laptop",),
+    "smartphone": ("smartphone",),
+    "tablet": ("tablet",),
+    "hardware": ("monitor", "laptop"),
+}
 
 CARRIERS = ("docomo", "au", "SoftBank")
 
@@ -597,6 +689,87 @@ def build_loans(
     return len(open_loans) + len(returned_loans)
 
 
+def build_tickets(
+    session: Session,
+    employees: list[Employee],
+    users_by_email: dict[str, User],
+    now: datetime,
+) -> int:
+    """Create 80 tickets across every category, priority, and status.
+
+    employee@demo (E0010) files every 20th ticket, so the employee view has data.
+    Device tickets link a device the requester actually holds. Tickets in
+    progress, resolved, or closed have an IT assignee and a reply.
+    """
+    categories = list(TICKET_TEXTS)
+    demo_employee = next(e for e in employees if e.employee_code == "E0010")
+    staff = (users_by_email["it@demo"], users_by_email["admin@demo"])
+
+    held_by: dict[tuple[int, str], int] = {}
+    for asset_id, holder, asset_type in session.execute(
+        select(Asset.id, Asset.assigned_to, Asset.type)
+        .where(Asset.assigned_to.is_not(None))
+        .order_by(Asset.id)
+    ):
+        held_by.setdefault((holder, asset_type), asset_id)
+
+    for index, status in enumerate(TICKET_STATUS_PLAN):
+        category = categories[index % len(categories)]
+        title, description = TICKET_TEXTS[category][(index // len(categories)) % 2]
+        requester = demo_employee if index % 20 == 0 else employees[(index * 7) % len(employees)]
+        asset_id = next(
+            (
+                held_by[(requester.id, asset_type)]
+                for asset_type in DEVICE_CATEGORY_TYPES.get(category, ())
+                if (requester.id, asset_type) in held_by
+            ),
+            None,
+        )
+        assignee = staff[index % 2] if status != "open" else None
+        created = now - timedelta(days=(80 - index) * 1.1, hours=index % 9)
+        resolved = (
+            created + timedelta(days=1, hours=3) if status in ("resolved", "closed") else None
+        )
+        ticket = Ticket(
+            title=title,
+            description=description,
+            category=category,
+            priority=TICKET_PRIORITY_CYCLE[index % len(TICKET_PRIORITY_CYCLE)],
+            status=status,
+            requester_id=requester.id,
+            assignee_id=assignee.id if assignee else None,
+            asset_id=asset_id,
+            source="web",
+            resolved_at=resolved,
+            created_at=created,
+            updated_at=resolved or created,
+        )
+        session.add(ticket)
+        session.flush()
+        if assignee is not None:
+            session.add(
+                TicketComment(
+                    ticket_id=ticket.id,
+                    author_id=assignee.id,
+                    body="確認しました。担当として対応いたします。",
+                    created_at=created + timedelta(hours=2),
+                    updated_at=created + timedelta(hours=2),
+                )
+            )
+        if resolved is not None:
+            session.add(
+                TicketComment(
+                    ticket_id=ticket.id,
+                    author_id=assignee.id,
+                    body="対応が完了しました。問題が解決したかご確認ください。",
+                    created_at=resolved,
+                    updated_at=resolved,
+                )
+            )
+    session.flush()
+    return len(TICKET_STATUS_PLAN)
+
+
 def run_seed(session: Session, settings: Settings) -> dict[str, int]:
     """Replace all application data with demo data in one transaction.
 
@@ -618,6 +791,7 @@ def run_seed(session: Session, settings: Settings) -> dict[str, int]:
         loan_count = build_loans(
             session, {e.employee_code: e for e in employees}, users_by_email, now
         )
+        ticket_count = build_tickets(session, employees, users_by_email, now)
         # System action, so user_id is empty. No password data goes into the detail.
         session.add(
             AuditLog(
@@ -631,6 +805,7 @@ def run_seed(session: Session, settings: Settings) -> dict[str, int]:
                     "assets": asset_count,
                     "kitting_devices": kitting_count,
                     "loans": loan_count,
+                    "tickets": ticket_count,
                 },
             )
         )
@@ -644,6 +819,7 @@ def run_seed(session: Session, settings: Settings) -> dict[str, int]:
         "assets": asset_count,
         "kitting_devices": kitting_count,
         "loans": loan_count,
+        "tickets": ticket_count,
     }
 
 
