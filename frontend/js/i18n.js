@@ -93,6 +93,14 @@ export function t(key, params = {}) {
 }
 
 /**
+ * @param {string} key
+ * @returns {boolean} Whether the active language has this key.
+ */
+export function hasKey(key) {
+  return key in dictionary;
+}
+
+/**
  * Translate an API error code. Unknown codes fall back to a generic message.
  * @param {string} code
  * @returns {string}

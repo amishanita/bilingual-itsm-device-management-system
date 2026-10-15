@@ -1,0 +1,97 @@
+<!doctype html>
+<!-- Device list with filters, search, paging, and the add-device form (IT staff). -->
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Tamang Amish">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:8000; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <title data-i18n="devices.title"></title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/devices.js"></script>
+</head>
+<body>
+  <header id="topbar"></header>
+  <main class="page" aria-labelledby="page-heading">
+    <div class="page-header page-header-actions">
+      <h1 id="page-heading" data-i18n="devices.title"></h1>
+      <button id="add-toggle" class="button button-primary" type="button" aria-expanded="false"
+              aria-controls="add-panel" data-i18n="devices.add" hidden></button>
+    </div>
+
+    <section id="add-panel" class="panel" aria-labelledby="add-heading" hidden>
+      <h2 id="add-heading" data-i18n="devices.add_heading"></h2>
+      <form id="add-form" novalidate>
+        <div id="add-fields" class="form-grid"></div>
+        <p id="add-error" class="alert" role="alert" hidden></p>
+        <div class="form-actions">
+          <button class="button button-primary" type="submit" data-i18n="common.save"></button>
+          <button id="add-cancel" class="button button-quiet" type="button" data-i18n="common.cancel"></button>
+        </div>
+      </form>
+    </section>
+
+    <form id="filters" class="panel filters" role="search" data-i18n-aria-label="devices.filters">
+      <div class="filter-search">
+        <label for="filter-q" data-i18n="common.search"></label>
+        <input id="filter-q" name="q" type="search" maxlength="100" data-i18n-placeholder="devices.search_placeholder">
+      </div>
+      <div>
+        <label for="filter-type" data-i18n="field.type"></label>
+        <select id="filter-type" name="type"></select>
+      </div>
+      <div>
+        <label for="filter-status" data-i18n="field.status"></label>
+        <select id="filter-status" name="status"></select>
+      </div>
+      <div>
+        <label for="filter-os" data-i18n="field.os"></label>
+        <select id="filter-os" name="os"></select>
+      </div>
+      <div>
+        <label for="filter-compliance" data-i18n="field.compliance"></label>
+        <select id="filter-compliance" name="compliance"></select>
+      </div>
+      <div>
+        <label for="filter-overdue" data-i18n="devices.overdue"></label>
+        <select id="filter-overdue" name="overdue"></select>
+      </div>
+      <div class="filter-actions">
+        <button id="filter-reset" class="button button-quiet" type="button" data-i18n="devices.reset"></button>
+      </div>
+    </form>
+
+    <p id="page-status" class="notice" role="status" data-i18n="common.loading"></p>
+    <p id="add-success" class="notice" role="status" hidden></p>
+
+    <section id="results" class="panel" aria-labelledby="results-heading" hidden>
+      <h2 id="results-heading" class="visually-hidden" data-i18n="devices.results"></h2>
+      <p id="result-count" class="muted" aria-live="polite"></p>
+      <div class="table-wrap">
+        <table class="data-table" id="device-table">
+          <thead><tr>
+            <th scope="col" data-i18n="field.asset_tag"></th>
+            <th scope="col" data-i18n="field.type"></th>
+            <th scope="col" data-i18n="field.model"></th>
+            <th scope="col" data-i18n="field.status"></th>
+            <th scope="col" data-i18n="field.holder"></th>
+            <th scope="col" data-i18n="field.os"></th>
+            <th scope="col" data-i18n="field.compliance"></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p id="no-results" class="muted" data-i18n="devices.no_results" hidden></p>
+      <nav class="pager" data-i18n-aria-label="common.pagination">
+        <button id="page-prev" class="button button-quiet" type="button" data-i18n="common.prev"></button>
+        <span id="page-info" class="muted"></span>
+        <button id="page-next" class="button button-quiet" type="button" data-i18n="common.next"></button>
+      </nav>
+    </section>
+  </main>
+  <noscript>JavaScript is required. / JavaScriptを有効にしてください。</noscript>
+</body>
+</html>

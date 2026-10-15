@@ -18,6 +18,10 @@
   --color-topbar-text: #e8eef5;
   --color-chart: #2b6cb0;
   --color-warning-bg: #fff4e5;
+  --color-warning: #8a4b00;
+  --color-success: #1e6b3a;
+  --color-success-bg: #e7f5ec;
+  --color-neutral-bg: #eef1f4;
 
   --font-sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI",
     "Meiryo", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -452,6 +456,16 @@ a.kpi[href]:hover {
   overflow-x: auto;
 }
 
+/* Short headers stay on one line; long text columns keep a readable width and
+   the table scrolls sideways inside its panel on small screens. */
+.data-table th {
+  white-space: nowrap;
+}
+
+.data-table .text-cell {
+  min-width: 12em;
+}
+
 /* Codes such as asset tags (PC-0018) must never break across lines. */
 .nowrap {
   white-space: nowrap;
@@ -465,6 +479,327 @@ a.kpi[href]:hover {
 
 .data-table tr.urgent td {
   background: var(--color-warning-bg);
+}
+
+/* Buttons: extra variants */
+
+.button-small {
+  min-height: 36px;
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.9rem;
+}
+
+.button-danger {
+  background: var(--color-surface);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+a.button {
+  text-decoration: none;
+}
+
+.page-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.breadcrumb {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.device-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-2) 0 0;
+  color: var(--color-muted);
+}
+
+.panel-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.panel-heading h2 {
+  margin: 0;
+}
+
+.inline-label {
+  display: inline;
+  margin: 0 var(--space-2) 0 0;
+}
+
+.panel-heading select {
+  width: auto;
+}
+
+/* Status badges: text always carries the meaning, color only helps scanning. */
+
+.badge {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  background: var(--color-neutral-bg);
+  color: var(--color-text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.badge-kitting,
+.badge-ordered,
+.badge-ticket-in_progress {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.badge-ready,
+.badge-in_stock,
+.badge-compliant,
+.badge-ticket-resolved {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.badge-repair,
+.badge-returned,
+.badge-wiped,
+.badge-unknown,
+.badge-on_loan,
+.badge-ticket-open {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.badge-non_compliant,
+.badge-overdue {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.badge-retired,
+.badge-ticket-closed {
+  background: var(--color-neutral-bg);
+  color: var(--color-muted);
+}
+
+/* Filters */
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--space-3);
+  align-items: end;
+}
+
+.filters label {
+  margin-top: var(--space-2);
+}
+
+.filter-search {
+  grid-column: 1 / -1;
+}
+
+.filter-actions {
+  grid-column: 1 / -1;
+  margin-top: var(--space-3);
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.data-table tr.overdue td {
+  background: var(--color-danger-bg);
+}
+
+/* Forms */
+
+.form-grid {
+  display: grid;
+  gap: 0 var(--space-4);
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+label.required::after {
+  content: " *";
+  color: var(--color-danger);
+}
+
+.field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.field-checkbox input {
+  width: 22px;
+  min-height: 22px;
+  height: 22px;
+}
+
+.field-checkbox label {
+  margin: 0;
+}
+
+.field-textarea {
+  grid-column: 1 / -1;
+}
+
+.hint {
+  margin: var(--space-1) 0 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.field-error {
+  margin: var(--space-1) 0 0;
+  color: var(--color-danger);
+  font-size: 0.85rem;
+}
+
+[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+/* Field lists on the device page */
+
+.field-list {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.field-list dt {
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.field-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+/* Lifecycle actions */
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.action-form {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.action-form h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Kitting checklist */
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+progress {
+  flex: 1;
+  height: 12px;
+  accent-color: var(--color-primary);
+}
+
+.progress-text {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.checklist {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.checklist li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.checklist input {
+  width: 22px;
+  min-height: 22px;
+  height: 22px;
+}
+
+.checklist label {
+  flex: 1;
+  margin: 0;
+  font-weight: 400;
+}
+
+.checklist li.done label {
+  color: var(--color-muted);
+}
+
+.task-meta {
+  font-size: 0.8rem;
+}
+
+/* History timeline */
+
+.timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline li {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2) 0 var(--space-2) var(--space-4);
+  border-left: 2px solid var(--color-border);
+}
+
+.timeline time,
+.timeline-actor {
+  font-size: 0.8rem;
+}
+
+.timeline-detail {
+  font-size: 0.9rem;
 }
 
 /* Wider screens: menu always visible on one line. */
@@ -504,5 +839,13 @@ a.kpi[href]:hover {
   .data-table th,
   .data-table td {
     padding: var(--space-2) var(--space-3);
+  }
+
+  .filters {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

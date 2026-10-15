@@ -1,0 +1,141 @@
+<!doctype html>
+<!-- One device: details, lifecycle actions, kitting checklist, loans, tickets, and history. -->
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Tamang Amish">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:8000; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <title data-i18n="device.title"></title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/device.js"></script>
+</head>
+<body>
+  <header id="topbar"></header>
+  <main class="page" aria-labelledby="page-heading">
+    <p class="breadcrumb"><a href="devices.html" data-i18n="device.back"></a></p>
+    <div class="page-header">
+      <h1 id="page-heading" data-i18n="device.title"></h1>
+      <p id="device-summary" class="device-summary"></p>
+    </div>
+
+    <p id="page-status" class="notice" role="status" data-i18n="common.loading"></p>
+    <p id="action-message" class="notice" role="status" hidden></p>
+
+    <div id="device" hidden>
+      <section id="actions-panel" class="panel" aria-labelledby="actions-heading" hidden>
+        <h2 id="actions-heading" data-i18n="device.actions"></h2>
+        <p id="actions-none" class="muted" data-i18n="device.no_actions" hidden></p>
+        <div id="action-buttons" class="action-buttons"></div>
+        <form id="action-form" class="action-form" novalidate hidden>
+          <h3 id="action-form-heading"></h3>
+          <div id="action-fields"></div>
+          <p id="action-error" class="alert" role="alert" hidden></p>
+          <div class="form-actions">
+            <button id="action-confirm" class="button button-primary" type="submit" data-i18n="device.confirm"></button>
+            <button id="action-cancel" class="button button-quiet" type="button" data-i18n="common.cancel"></button>
+          </div>
+        </form>
+      </section>
+
+      <div class="panel-grid">
+        <section class="panel" aria-labelledby="info-heading">
+          <div class="panel-heading">
+            <h2 id="info-heading" data-i18n="device.info"></h2>
+            <button id="info-edit" class="button button-quiet button-small" type="button" data-i18n="common.edit" hidden></button>
+          </div>
+          <dl id="info-list" class="field-list"></dl>
+          <form id="info-form" novalidate hidden>
+            <div id="info-fields" class="form-grid"></div>
+            <p id="info-error" class="alert" role="alert" hidden></p>
+            <div class="form-actions">
+              <button class="button button-primary" type="submit" data-i18n="common.save"></button>
+              <button class="button button-quiet form-cancel" type="button" data-i18n="common.cancel"></button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel" aria-labelledby="details-heading">
+          <div class="panel-heading">
+            <h2 id="details-heading" data-i18n="device.details"></h2>
+            <button id="details-edit" class="button button-quiet button-small" type="button" data-i18n="common.edit" hidden></button>
+          </div>
+          <dl id="details-list" class="field-list"></dl>
+          <form id="details-form" novalidate hidden>
+            <div id="details-fields" class="form-grid"></div>
+            <p id="details-error" class="alert" role="alert" hidden></p>
+            <div class="form-actions">
+              <button class="button button-primary" type="submit" data-i18n="common.save"></button>
+              <button class="button button-quiet form-cancel" type="button" data-i18n="common.cancel"></button>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <section id="kitting-panel" class="panel" aria-labelledby="kitting-heading" hidden>
+        <div class="panel-heading">
+          <h2 id="kitting-heading" data-i18n="device.kitting"></h2>
+          <div id="run-picker" hidden>
+            <label for="run-select" class="inline-label" data-i18n="device.kitting_run"></label>
+            <select id="run-select"></select>
+          </div>
+        </div>
+        <p id="kitting-empty" class="muted" data-i18n="device.kitting_empty" hidden></p>
+        <div id="kitting-body">
+          <div class="progress-row">
+            <progress id="kitting-progress" max="100" value="0" data-i18n-aria-label="device.kitting_progress"></progress>
+            <span id="kitting-percent" class="progress-text"></span>
+          </div>
+          <p id="kitting-readonly" class="muted" data-i18n="device.kitting_readonly" hidden></p>
+          <ol id="kitting-tasks" class="checklist"></ol>
+          <p id="kitting-error" class="alert" role="alert" hidden></p>
+        </div>
+      </section>
+
+      <section id="loans-panel" class="panel" aria-labelledby="loans-heading" hidden>
+        <h2 id="loans-heading" data-i18n="device.loans"></h2>
+        <p id="loans-empty" class="muted" data-i18n="device.loans_empty" hidden></p>
+        <div class="table-wrap">
+          <table class="data-table" id="loans-table">
+            <thead><tr>
+              <th scope="col" data-i18n="field.employee"></th>
+              <th scope="col" data-i18n="loan.lent_at"></th>
+              <th scope="col" data-i18n="loan.due_at"></th>
+              <th scope="col" data-i18n="loan.returned_at"></th>
+              <th scope="col" data-i18n="loan.condition"></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="tickets-panel" class="panel" aria-labelledby="tickets-heading">
+        <h2 id="tickets-heading" data-i18n="device.tickets"></h2>
+        <p id="tickets-empty" class="muted" data-i18n="device.tickets_empty" hidden></p>
+        <div class="table-wrap">
+          <table class="data-table" id="tickets-table">
+            <thead><tr>
+              <th scope="col" data-i18n="ticket.number"></th>
+              <th scope="col" data-i18n="ticket.title"></th>
+              <th scope="col" data-i18n="field.status"></th>
+              <th scope="col" data-i18n="ticket.priority"></th>
+              <th scope="col" data-i18n="field.created_at"></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="history-panel" class="panel" aria-labelledby="history-heading" hidden>
+        <h2 id="history-heading" data-i18n="device.history"></h2>
+        <p id="history-empty" class="muted" data-i18n="device.history_empty" hidden></p>
+        <ol id="history-list" class="timeline"></ol>
+      </section>
+    </div>
+  </main>
+  <noscript>JavaScript is required. / JavaScriptを有効にしてください。</noscript>
+</body>
+</html>
