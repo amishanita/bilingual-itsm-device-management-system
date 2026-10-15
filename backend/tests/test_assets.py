@@ -4,14 +4,14 @@ Seed facts used here: 60 devices. employee@demo (E0010, 営業部) holds PC-0001
 iPhone. manager@demo sees only devices held in 営業部. E0016 is on leave.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import Asset, AuditLog, DeviceDetail, DeviceLoan, Employee, User
+from app.models import Asset, AuditLog, DeviceDetail, Employee, User
 from app.services import audit_service
 from tests.helpers import employee_by_code, error_code, headers_as
 
@@ -203,26 +203,13 @@ def test_search_by_serial_imei_phone_and_holder_name(client: TestClient, db: Ses
 
 
 def test_overdue_filter(client: TestClient, db: Session) -> None:
+    """The seed has three overdue loans (PC-0019, SP-0041, TB-0053)."""
     headers = headers_as(db, IT)
-    assert list_tags(client, headers, "&overdue=true") == []
-
-    asset = first_asset(db, "ready")
-    borrower = employee_by_code(db, "E0003")
-    it_user = db.scalars(select(User).where(User.email == IT)).one()
-    asset.status, asset.assigned_to = "on_loan", borrower.id
-    now = datetime.now(UTC)
-    db.add(
-        DeviceLoan(
-            asset_id=asset.id,
-            employee_id=borrower.id,
-            lent_by=it_user.id,
-            lent_at=now - timedelta(days=10),
-            due_at=now - timedelta(days=3),
-        )
-    )
-    db.commit()
-    assert list_tags(client, headers, "&overdue=true") == [asset.asset_tag]
-    assert asset.asset_tag not in list_tags(client, headers, "&overdue=false")
+    overdue = list_tags(client, headers, "&overdue=true")
+    assert sorted(overdue) == ["PC-0019", "SP-0041", "TB-0053"]
+    not_overdue = list_tags(client, headers, "&overdue=false")
+    assert not set(overdue) & set(not_overdue)
+    assert len(overdue) + len(not_overdue) == 60
 
 
 # Create and update

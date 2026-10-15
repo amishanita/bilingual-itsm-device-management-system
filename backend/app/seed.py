@@ -1,8 +1,9 @@
 """Demo data loader. Run with: python -m app.seed
 
 Current scope: the four demo logins, 30 employees across five departments,
-60 devices with details, four kitting templates, and four devices in kitting.
-Later phases add loans, tickets, and FAQ articles.
+60 devices with details, four kitting templates, four devices in kitting, and
+eight loans (four open, three of them overdue, and four returned).
+Later phases add tickets and FAQ articles.
 
 Safety rules (Part B.4):
 - Runs only when APP_ENV is development or demo, never production.
@@ -31,6 +32,7 @@ from app.models import (
     AuditLog,
     Base,
     DeviceDetail,
+    DeviceLoan,
     Employee,
     KittingTask,
     KittingTemplate,
@@ -529,6 +531,72 @@ def build_kitting(session: Session, users_by_email: dict[str, User], now: dateti
     return len(plan)
 
 
+def build_loans(
+    session: Session,
+    employees_by_code: dict[str, Employee],
+    users_by_email: dict[str, User],
+    now: datetime,
+) -> int:
+    """Create eight loans that agree with each device's status.
+
+    Open (device on_loan, held by the borrower): three overdue, one current.
+    Returned: two without wipe (device now returned) and two with wipe
+    confirmation (device now wiped), so the history matches the lifecycle.
+    """
+    lender = users_by_email["it@demo"]
+
+    def first(status: str, asset_type: str | None = None, skip: int = 0) -> Asset:
+        query = select(Asset).where(Asset.status == status).order_by(Asset.id)
+        if asset_type:
+            query = query.where(Asset.type == asset_type)
+        return session.scalars(query.offset(skip)).first()
+
+    # (device, borrower code, lent days ago, due days from now)
+    open_loans = [
+        (first("ready", "laptop"), "E0011", 20, -6),
+        (first("ready", "smartphone"), "E0014", 15, -3),
+        (first("ready", "tablet"), "E0020", 12, -1),
+        (first("in_stock", "tablet"), "E0026", 2, 5),
+    ]
+    for asset, code, lent_ago, due_in in open_loans:
+        borrower = employees_by_code[code]
+        asset.status = "on_loan"
+        asset.assigned_to = borrower.id
+        session.add(
+            DeviceLoan(
+                asset_id=asset.id,
+                employee_id=borrower.id,
+                lent_by=lender.id,
+                lent_at=now - timedelta(days=lent_ago),
+                due_at=now + timedelta(days=due_in),
+            )
+        )
+
+    # (device, borrower code, lent days ago, condition, wipe confirmed)
+    returned_loans = [
+        (first("returned", skip=0), "E0003", 60, "ok", False),
+        (first("returned", skip=1), "E0008", 50, "damaged", False),
+        (first("wiped", skip=0), "E0021", 45, "ok", True),
+        (first("wiped", skip=1), "E0027", 40, "missing_parts", True),
+    ]
+    for asset, code, lent_ago, condition, wiped in returned_loans:
+        lent_at = now - timedelta(days=lent_ago)
+        session.add(
+            DeviceLoan(
+                asset_id=asset.id,
+                employee_id=employees_by_code[code].id,
+                lent_by=lender.id,
+                lent_at=lent_at,
+                due_at=lent_at + timedelta(days=7),
+                returned_at=lent_at + timedelta(days=5),
+                condition=condition,
+                wipe_done=wiped,
+            )
+        )
+    session.flush()
+    return len(open_loans) + len(returned_loans)
+
+
 def run_seed(session: Session, settings: Settings) -> dict[str, int]:
     """Replace all application data with demo data in one transaction.
 
@@ -545,7 +613,11 @@ def run_seed(session: Session, settings: Settings) -> dict[str, int]:
         session.flush()
         now = datetime.now(UTC)
         asset_count = build_assets(session, employees, now.date(), now)
-        kitting_count = build_kitting(session, {u.email: u for u in users}, now)
+        users_by_email = {u.email: u for u in users}
+        kitting_count = build_kitting(session, users_by_email, now)
+        loan_count = build_loans(
+            session, {e.employee_code: e for e in employees}, users_by_email, now
+        )
         # System action, so user_id is empty. No password data goes into the detail.
         session.add(
             AuditLog(
@@ -558,6 +630,7 @@ def run_seed(session: Session, settings: Settings) -> dict[str, int]:
                     "users": len(users),
                     "assets": asset_count,
                     "kitting_devices": kitting_count,
+                    "loans": loan_count,
                 },
             )
         )
@@ -570,6 +643,7 @@ def run_seed(session: Session, settings: Settings) -> dict[str, int]:
         "users": len(users),
         "assets": asset_count,
         "kitting_devices": kitting_count,
+        "loans": loan_count,
     }
 
 

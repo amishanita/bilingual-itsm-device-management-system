@@ -13,7 +13,8 @@ from app.core.database import commit_or_conflict
 from app.core.demo import is_demo_account
 from app.core.deps import AppSettings, DbSession, ItAdmin, ManagerOrAdmin, manager_department
 from app.core.errors import AppError
-from app.models import Employee, User
+from app.models import Asset, DeviceDetail, DeviceLoan, Employee, User
+from app.models.base import HELD_ASSET_STATUSES
 from app.schemas.common import Limit, Offset, Page, SearchText, like_pattern
 from app.schemas.employees import (
     EmployeeCreate,
@@ -21,7 +22,8 @@ from app.schemas.employees import (
     EmployeeStatus,
     EmployeeUpdate,
 )
-from app.services import audit_service
+from app.schemas.loans import HeldDeviceOut, OpenLoanSummary
+from app.services import audit_service, loan_service
 
 router = APIRouter(prefix="/employees", tags=["employees"])
 
@@ -124,6 +126,48 @@ def create_employee(body: EmployeeCreate, db: DbSession, admin: ItAdmin) -> Empl
 def read_employee(employee_id: int, db: DbSession, user: ManagerOrAdmin) -> EmployeeOut:
     """Return one employee within the caller's scope."""
     return EmployeeOut.model_validate(get_visible_employee(db, employee_id, user))
+
+
+@router.get("/{employee_id}/devices", response_model=list[HeldDeviceOut])
+def held_devices(employee_id: int, db: DbSession, user: ManagerOrAdmin) -> list[HeldDeviceOut]:
+    """Leaver flow, step 2: every device the employee currently holds.
+
+    Assigned, on-loan, and in-repair devices are listed. On-loan devices carry
+    their open loan, so IT can return them through the loan return. Nothing is
+    returned automatically; IT returns each device explicitly.
+    """
+    employee = get_visible_employee(db, employee_id, user)
+    assets = list(
+        db.scalars(
+            select(Asset)
+            .where(Asset.assigned_to == employee.id, Asset.status.in_(HELD_ASSET_STATUSES))
+            .order_by(Asset.asset_tag)
+        )
+    )
+    ids = [a.id for a in assets]
+    details = {
+        d.asset_id: d
+        for d in db.scalars(select(DeviceDetail).where(DeviceDetail.asset_id.in_(ids)))
+    }
+    open_loans = {
+        loan.asset_id: loan
+        for loan in db.scalars(
+            select(DeviceLoan).where(DeviceLoan.asset_id.in_(ids), DeviceLoan.returned_at.is_(None))
+        )
+    }
+    now = loan_service.now_utc()
+
+    result = []
+    for asset in assets:
+        device = HeldDeviceOut.model_validate(asset)
+        if detail := details.get(asset.id):
+            device.os, device.compliance = detail.os, detail.compliance
+        if loan := open_loans.get(asset.id):
+            device.open_loan = OpenLoanSummary(
+                id=loan.id, due_at=loan.due_at, is_overdue=loan_service.is_overdue(loan, now)
+            )
+        result.append(device)
+    return result
 
 
 @router.put("/{employee_id}", response_model=EmployeeOut)
