@@ -17,7 +17,7 @@ from app.core.errors import AppError
 from app.models import Asset, AuditLog, DeviceLoan, Employee, KittingTask, User
 from app.models.base import ASSET_STATUSES, HELD_ASSET_STATUSES
 from app.services import asset_service
-from app.services.asset_service import TRANSITIONS, change_status
+from app.services.asset_service import TRANSITIONS, WORKFLOW_TRANSITIONS, change_status
 
 NOW = datetime.now(UTC)
 
@@ -133,7 +133,7 @@ def test_every_status_pair(db_session: Session, current: str, requested: str) ->
             employee_id=employee.id if requested in ("assigned", "on_loan") else None,
             note="Erase certificate EC-001" if requested == "retired" else None,
             wipe_confirmed=requested == "wiped",
-            via_loan=True,
+            workflow=WORKFLOW_TRANSITIONS.get((current, requested)),
         )
 
     if requested in SPEC[current]:
@@ -205,12 +205,12 @@ def test_handover_needs_an_employee(db_session: Session, target: str) -> None:
     asset = make_asset_in(db_session, "ready")
     expect_error(
         "EMPLOYEE_REQUIRED",
-        lambda: change_status(db_session, asset.id, target, actor, via_loan=True),
+        lambda: change_status(db_session, asset.id, target, actor, workflow="loan"),
     )
     expect_error(
         "EMPLOYEE_NOT_FOUND",
         lambda: change_status(
-            db_session, asset.id, target, actor, employee_id=999999, via_loan=True
+            db_session, asset.id, target, actor, employee_id=999999, workflow="loan"
         ),
     )
 
@@ -343,7 +343,7 @@ def test_retired_is_final(db_session: Session) -> None:
         expect_error(
             "INVALID_STATUS_CHANGE",
             lambda status=status: change_status(
-                db_session, asset.id, status, actor, note="x", wipe_confirmed=True, via_loan=True
+                db_session, asset.id, status, actor, note="x", wipe_confirmed=True, workflow="loan"
             ),
         )
 

@@ -42,10 +42,22 @@ TRANSITIONS: dict[str, frozenset[str]] = {
     for status, targets in _FORWARD.items()
 }
 
-# Lending and returning a loan must create or close a loan record with a due
-# date and a return condition. These two moves therefore belong to the loan
-# workflow and are refused when requested directly.
-LOAN_TRANSITIONS = frozenset({("ready", "on_loan"), ("on_loan", "returned")})
+# Moves that must create or close related records, and so belong to a
+# dedicated workflow instead of the plain status endpoint:
+# - kitting: starting kitting copies a template into the device's checklist
+# - loan: lending and returning create or close a loan with a due date and condition
+WORKFLOW_TRANSITIONS: dict[tuple[str, str], str] = {
+    ("in_stock", "kitting"): "kitting",
+    ("ready", "on_loan"): "loan",
+    ("on_loan", "returned"): "loan",
+}
+WORKFLOW_ERRORS = {
+    "kitting": ("KITTING_WORKFLOW_REQUIRED", "Start kitting through the kitting endpoint."),
+    "loan": (
+        "LOAN_WORKFLOW_REQUIRED",
+        "Lending and loan returns must go through the loans endpoints.",
+    ),
+}
 
 # Statuses reached by handing the device to an employee.
 HANDOVER_STATUSES = frozenset({"assigned", "on_loan"})
@@ -201,25 +213,24 @@ def change_status(
     employee_id: int | None = None,
     note: str | None = None,
     wipe_confirmed: bool = False,
-    via_loan: bool = False,
+    workflow: str | None = None,
 ) -> Asset:
     """Move an asset to a new lifecycle status after checking every rule.
 
     The asset row is locked first, so the rules are checked against its
     latest state. Raises AppError (400) for any rule violation; nothing is
-    changed in that case. via_loan is set only by the loan workflow.
+    changed in that case. workflow is set only by the kitting and loan
+    services, for the moves they own (WORKFLOW_TRANSITIONS).
     """
     asset = lock_asset(db, asset_id)
     current = asset.status
 
     if new_status == current or new_status not in TRANSITIONS[current]:
         raise invalid_change(current, new_status)
-    if (current, new_status) in LOAN_TRANSITIONS and not via_loan:
-        raise AppError(
-            400,
-            "LOAN_WORKFLOW_REQUIRED",
-            "Lending and loan returns must go through the loans endpoints.",
-        )
+    required_workflow = WORKFLOW_TRANSITIONS.get((current, new_status))
+    if required_workflow is not None and workflow != required_workflow:
+        code, message = WORKFLOW_ERRORS[required_workflow]
+        raise AppError(400, code, message)
     if employee_id is not None and new_status not in HANDOVER_STATUSES:
         raise AppError(400, "EMPLOYEE_NOT_ALLOWED", "An employee is only used when handing over.")
 

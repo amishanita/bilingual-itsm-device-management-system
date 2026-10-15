@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import Asset, AuditLog, DeviceDetail, DeviceLoan, Employee, KittingTask, User
+from app.models import Asset, AuditLog, DeviceDetail, DeviceLoan, Employee, User
 from app.services import audit_service
 from tests.helpers import employee_by_code, error_code, headers_as
 
@@ -373,24 +373,17 @@ def test_details_validation(client: TestClient, db: Session, body: dict) -> None
 
 def test_full_lifecycle_through_the_api(client: TestClient, db: Session) -> None:
     """in_stock -> kitting -> ready -> assigned -> repair -> ready -> assigned -> returned
-    -> wiped -> in_stock, with the history recording each step in order."""
+    -> wiped -> in_stock, with the history recording each status change in order."""
     asset = first_asset(db, "in_stock")
     employee = employee_by_code(db, "E0011")
 
-    assert set_status(client, db, asset, new_status="kitting").status_code == 200
+    headers = headers_as(db, IT)
+    started = client.post(f"/api/assets/{asset.id}/kitting/start", json={}, headers=headers)
+    assert started.status_code == 201
     blocked = set_status(client, db, asset, new_status="ready")
     assert error_code(blocked) == "KITTING_NOT_COMPLETE"
-    db.add(
-        KittingTask(
-            asset_id=asset.id,
-            step_no=1,
-            step_en="Enroll",
-            step_ja="登録",
-            done=True,
-            done_at=datetime.now(UTC),
-        )
-    )
-    db.commit()
+    for task in started.json()["tasks"]:
+        client.patch(f"/api/kitting-tasks/{task['id']}", json={"done": True}, headers=headers)
 
     steps = [
         {"new_status": "ready"},
@@ -408,7 +401,8 @@ def test_full_lifecycle_through_the_api(client: TestClient, db: Session) -> None
         assert response.json()["status"] == step["new_status"]
 
     history = client.get(f"/api/assets/{asset.id}/history", headers=headers_as(db, IT)).json()
-    assert [h["detail"]["new_status"] for h in history] == [
+    status_changes = [h for h in history if "new_status" in h["detail"]]
+    assert [h["detail"]["new_status"] for h in status_changes] == [
         "kitting",
         "ready",
         "assigned",
@@ -437,6 +431,7 @@ def test_repeated_request_is_refused_the_second_time(client: TestClient, db: Ses
     [
         ("ready", {"new_status": "assigned"}, "EMPLOYEE_REQUIRED"),
         ("ready", {"new_status": "on_loan", "employee_id": 1}, "LOAN_WORKFLOW_REQUIRED"),
+        ("in_stock", {"new_status": "kitting"}, "KITTING_WORKFLOW_REQUIRED"),
         ("returned", {"new_status": "wiped"}, "WIPE_CONFIRMATION_REQUIRED"),
         ("in_stock", {"new_status": "retired"}, "RETIREMENT_NOTE_REQUIRED"),
         ("in_stock", {"new_status": "assigned", "employee_id": 1}, "INVALID_STATUS_CHANGE"),

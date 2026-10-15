@@ -1,8 +1,8 @@
 """Demo data loader. Run with: python -m app.seed
 
-Current scope: the four demo logins, 30 employees across five departments, and
-60 devices with details. Later phases add kitting templates and tasks, loans,
-tickets, and FAQ articles (and move some devices into kitting and on loan).
+Current scope: the four demo logins, 30 employees across five departments,
+60 devices with details, four kitting templates, and four devices in kitting.
+Later phases add loans, tickets, and FAQ articles.
 
 Safety rules (Part B.4):
 - Runs only when APP_ENV is development or demo, never production.
@@ -18,14 +18,24 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 from pydantic import ValidationError
-from sqlalchemy import text
+from sqlalchemy import select, text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from app.core.config import AppEnv, Settings, get_settings
 from app.core.database import SessionLocal
 from app.core.demo import DEMO_USERS
 from app.core.security import PasswordPolicyError, hash_password, validate_password
-from app.models import Asset, AuditLog, Base, DeviceDetail, Employee, User
+from app.models import (
+    Asset,
+    AuditLog,
+    Base,
+    DeviceDetail,
+    Employee,
+    KittingTask,
+    KittingTemplate,
+    User,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -178,6 +188,97 @@ DEVICE_PLAN: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
         ("assigned",) * 5 + ("in_stock",) * 2 + ("ready", "repair", "ordered"),
     ),
     ("monitor", ("P2423D", "EV2485"), ("assigned",) * 3 + ("in_stock",) * 2),
+)
+
+# Kitting templates: (device type, name, steps as (English, Japanese)).
+KITTING_TEMPLATES: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
+    (
+        "laptop",
+        "Windows PC (Autopilot / Intune)",
+        (
+            (
+                "Register the hardware hash in Windows Autopilot",
+                "ハードウェアハッシュをWindows Autopilotに登録する",
+            ),
+            ("Assign the Autopilot deployment profile", "Autopilot展開プロファイルを割り当てる"),
+            (
+                "Power on and complete the Autopilot setup",
+                "電源を入れ、Autopilotのセットアップを完了する",
+            ),
+            (
+                "Confirm Intune enrollment and compliance status",
+                "Intuneへの登録とコンプライアンス状態を確認する",
+            ),
+            ("Confirm BitLocker encryption is on", "BitLockerによる暗号化が有効か確認する"),
+            (
+                "Install required apps and run Windows Update",
+                "必要なアプリをインストールし、Windows Updateを実行する",
+            ),
+            (
+                "Attach the asset label and record the serial number",
+                "資産ラベルを貼り、シリアル番号を記録する",
+            ),
+        ),
+    ),
+    (
+        "smartphone",
+        "iPhone and iPad",
+        (
+            (
+                "Confirm the device is registered in Apple Business Manager",
+                "Apple Business Managerへの登録を確認する",
+            ),
+            ("Insert the SIM and confirm the line is active", "SIMを挿入し、回線の開通を確認する"),
+            (
+                "Complete setup and enroll in Intune (ADE)",
+                "初期設定を行い、Intune（ADE）に登録する",
+            ),
+            (
+                "Confirm the configuration profile and required apps arrived",
+                "構成プロファイルと必須アプリの配信を確認する",
+            ),
+            (
+                "Confirm the passcode policy and compliance status",
+                "パスコードポリシーとコンプライアンス状態を確認する",
+            ),
+            ("Attach the asset label and record the IMEI", "資産ラベルを貼り、IMEIを記録する"),
+        ),
+    ),
+    (
+        "smartphone",
+        "Android",
+        (
+            ("Insert the SIM and confirm the line is active", "SIMを挿入し、回線の開通を確認する"),
+            (
+                "Enroll with an Android Enterprise work profile",
+                "Android Enterpriseの仕事用プロファイルで登録する",
+            ),
+            ("Confirm Intune compliance status", "Intuneのコンプライアンス状態を確認する"),
+            (
+                "Confirm managed apps are in the work profile",
+                "仕事用プロファイルに管理アプリが入っているか確認する",
+            ),
+            ("Attach the asset label and record the IMEI", "資産ラベルを貼り、IMEIを記録する"),
+        ),
+    ),
+    (
+        "tablet",
+        "Shared device re-kit",
+        (
+            (
+                "Confirm the device is wiped and on the setup screen",
+                "初期化済みでセットアップ画面になっているか確認する",
+            ),
+            ("Re-enroll the device in Intune", "Intuneに再登録する"),
+            (
+                "Apply the shared device configuration profile",
+                "共有端末用の構成プロファイルを適用する",
+            ),
+            ("Check the battery, screen, and charger", "バッテリー・画面・充電器の状態を確認する"),
+            ("Clean the device and case", "端末とケースを清掃する"),
+            ("Update the loan ledger", "貸出台帳を更新する"),
+        ),
+    ),
 )
 
 CARRIERS = ("docomo", "au", "SoftBank")
@@ -352,6 +453,82 @@ def build_assets(session: Session, employees: list[Employee], today: date, now: 
     return count
 
 
+def build_kitting(session: Session, users_by_email: dict[str, User], now: datetime) -> int:
+    """Create the four templates and put four in-stock devices into kitting.
+
+    The devices show different stages: two laptops (3 of 7 and 6 of 7 steps done),
+    an iPhone (2 of 6), and a shared tablet on its second run, so the board has
+    two workers and the checklist history has an earlier, completed run.
+    """
+    templates: dict[str, KittingTemplate] = {}
+    for device_type, name, steps in KITTING_TEMPLATES:
+        template = KittingTemplate(
+            device_type=device_type,
+            name=name,
+            steps=[{"en": en, "ja": ja} for en, ja in steps],
+        )
+        session.add(template)
+        templates[name] = template
+    session.flush()
+
+    it_user = users_by_email["it@demo"]
+    admin_user = users_by_email["admin@demo"]
+
+    def in_stock(asset_type: str, model_prefix: str = "") -> Asset:
+        return session.scalars(
+            select(Asset)
+            .where(
+                Asset.type == asset_type,
+                Asset.status == "in_stock",
+                Asset.model.startswith(model_prefix),
+            )
+            .order_by(Asset.id)
+        ).first()
+
+    # (device, template, run number, steps done, who ticked them)
+    plan: list[tuple[Asset, KittingTemplate, int, int, User]] = []
+    for laptop, done, worker in zip(
+        session.scalars(
+            select(Asset)
+            .where(Asset.type == "laptop", Asset.status == "in_stock")
+            .order_by(Asset.id)
+            .limit(2)
+        ).all(),
+        (3, 6),
+        (it_user, admin_user),
+        strict=True,
+    ):
+        plan.append((laptop, templates["Windows PC (Autopilot / Intune)"], 1, done, worker))
+    plan.append((in_stock("smartphone", "iPhone"), templates["iPhone and iPad"], 1, 2, it_user))
+    plan.append((in_stock("tablet"), templates["Shared device re-kit"], 2, 1, admin_user))
+
+    for asset, template, run_no, done_count, worker in plan:
+        asset.status = "kitting"
+        # A re-kit keeps its earlier, completed run as history.
+        for run in range(1, run_no + 1):
+            finished = done_count if run == run_no else len(template.steps)
+            for step_no, step in enumerate(template.steps, start=1):
+                is_done = step_no <= finished
+                session.add(
+                    KittingTask(
+                        asset_id=asset.id,
+                        run_no=run,
+                        step_no=step_no,
+                        step_en=step["en"],
+                        step_ja=step["ja"],
+                        done=is_done,
+                        done_by=worker.id if is_done else None,
+                        done_at=(
+                            now - timedelta(days=(run_no - run) * 120, hours=step_no)
+                            if is_done
+                            else None
+                        ),
+                    )
+                )
+    session.flush()
+    return len(plan)
+
+
 def run_seed(session: Session, settings: Settings) -> dict[str, int]:
     """Replace all application data with demo data in one transaction.
 
@@ -368,6 +545,7 @@ def run_seed(session: Session, settings: Settings) -> dict[str, int]:
         session.flush()
         now = datetime.now(UTC)
         asset_count = build_assets(session, employees, now.date(), now)
+        kitting_count = build_kitting(session, {u.email: u for u in users}, now)
         # System action, so user_id is empty. No password data goes into the detail.
         session.add(
             AuditLog(
@@ -379,6 +557,7 @@ def run_seed(session: Session, settings: Settings) -> dict[str, int]:
                     "employees": len(employees),
                     "users": len(users),
                     "assets": asset_count,
+                    "kitting_devices": kitting_count,
                 },
             )
         )
@@ -386,7 +565,12 @@ def run_seed(session: Session, settings: Settings) -> dict[str, int]:
     except Exception:
         session.rollback()
         raise
-    return {"employees": len(employees), "users": len(users), "assets": asset_count}
+    return {
+        "employees": len(employees),
+        "users": len(users),
+        "assets": asset_count,
+        "kitting_devices": kitting_count,
+    }
 
 
 def main() -> int:
@@ -405,6 +589,9 @@ def main() -> int:
     except SeedRefusedError as exc:
         logger.error("Seed refused: %s", exc)
         return 2
+    except OperationalError:
+        logger.error("Seed failed: the database is not reachable. Check DATABASE_URL.")
+        return 1
     logger.info("Seed complete: %s", ", ".join(f"{k}={v}" for k, v in counts.items()))
     return 0
 
