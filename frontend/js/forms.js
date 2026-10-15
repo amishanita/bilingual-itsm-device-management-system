@@ -50,6 +50,9 @@ export function buildFields(container, fields, values = {}, idPrefix = "f") {
       input = el("select", { id, name: field.name });
       if (!field.required) {
         input.append(el("option", { value: "", "data-i18n": "common.none" }, t("common.none")));
+      } else if (values[field.name] === undefined || values[field.name] === null) {
+        // A required choice starts empty, so nothing is picked by accident.
+        input.append(el("option", { value: "", "data-i18n": "form.choose" }, t("form.choose")));
       }
       for (const option of field.options) {
         const attributes = option.label ? { value: option.value, "data-i18n": option.label } : { value: option.value };

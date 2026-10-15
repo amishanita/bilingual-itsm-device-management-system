@@ -1,0 +1,93 @@
+<!doctype html>
+<!-- Loans: active and past loans, overdue in red, lend form and return form (IT staff). -->
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Tamang Amish">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:8000; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <title data-i18n="loans.title"></title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/loans.js"></script>
+</head>
+<body>
+  <header id="topbar"></header>
+  <main class="page" aria-labelledby="page-heading">
+    <div class="page-header page-header-actions">
+      <div>
+        <h1 id="page-heading" data-i18n="loans.title"></h1>
+        <button id="overdue-summary" class="overdue-summary" type="button" hidden></button>
+      </div>
+      <button id="lend-toggle" class="button button-primary" type="button" aria-expanded="false"
+              aria-controls="lend-panel" data-i18n="loans.lend" hidden></button>
+    </div>
+
+    <p id="loans-message" class="notice" role="status" hidden></p>
+
+    <section id="lend-panel" class="panel" aria-labelledby="lend-heading" hidden>
+      <h2 id="lend-heading" data-i18n="loans.lend_heading"></h2>
+      <p class="muted" data-i18n="loans.lend_help"></p>
+      <form id="lend-form" novalidate>
+        <div id="lend-fields" class="form-grid"></div>
+        <p id="lend-error" class="alert" role="alert" hidden></p>
+        <div class="form-actions">
+          <button class="button button-primary" type="submit" data-i18n="loans.lend_submit"></button>
+          <button id="lend-cancel" class="button button-quiet" type="button" data-i18n="common.cancel"></button>
+        </div>
+      </form>
+    </section>
+
+    <section id="return-panel" class="panel" aria-labelledby="return-heading" hidden>
+      <h2 id="return-heading"></h2>
+      <p class="muted" data-i18n="loans.return_help"></p>
+      <form id="return-form" novalidate>
+        <div id="return-fields" class="form-grid"></div>
+        <p id="return-error" class="alert" role="alert" hidden></p>
+        <div class="form-actions">
+          <button class="button button-primary" type="submit" data-i18n="loans.return_submit"></button>
+          <button id="return-cancel" class="button button-quiet" type="button" data-i18n="common.cancel"></button>
+        </div>
+      </form>
+    </section>
+
+    <div class="tabs" role="group" data-i18n-aria-label="loans.view">
+      <button type="button" class="tab" data-state="open" data-i18n="loans.tab.open"></button>
+      <button type="button" class="tab" data-state="overdue" data-i18n="loans.tab.overdue"></button>
+      <button type="button" class="tab" data-state="returned" data-i18n="loans.tab.returned"></button>
+      <button type="button" class="tab" data-state="all" data-i18n="loans.tab.all"></button>
+    </div>
+
+    <p id="page-status" class="notice" role="status" data-i18n="common.loading"></p>
+
+    <section id="results" class="panel" aria-labelledby="results-heading" hidden>
+      <h2 id="results-heading" class="visually-hidden" data-i18n="loans.results"></h2>
+      <p id="result-count" class="muted" aria-live="polite"></p>
+      <div class="table-wrap">
+        <table class="data-table" id="loan-table">
+          <thead><tr>
+            <th scope="col" data-i18n="field.asset_tag"></th>
+            <th scope="col" data-i18n="field.model"></th>
+            <th scope="col" data-i18n="field.employee"></th>
+            <th scope="col" data-i18n="loan.lent_at"></th>
+            <th scope="col" data-i18n="loan.due_at"></th>
+            <th scope="col" data-i18n="field.status"></th>
+            <th scope="col" data-i18n="loan.condition"></th>
+            <th scope="col"><span class="visually-hidden" data-i18n="kitting.actions"></span></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p id="no-results" class="muted" data-i18n="loans.no_results" hidden></p>
+      <nav class="pager" data-i18n-aria-label="common.pagination">
+        <button id="page-prev" class="button button-quiet" type="button" data-i18n="common.prev"></button>
+        <span id="page-info" class="muted"></span>
+        <button id="page-next" class="button button-quiet" type="button" data-i18n="common.next"></button>
+      </nav>
+    </section>
+  </main>
+  <noscript>JavaScript is required. / JavaScriptを有効にしてください。</noscript>
+</body>
+</html>

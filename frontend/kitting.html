@@ -1,0 +1,55 @@
+<!doctype html>
+<!-- Kitting board: devices in kitting with progress, grouped by who is working on them. IT staff only. -->
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Tamang Amish">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:8000; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <title data-i18n="kitting.title"></title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/kitting.js"></script>
+</head>
+<body>
+  <header id="topbar"></header>
+  <main class="page" aria-labelledby="page-heading">
+    <div class="page-header page-header-actions">
+      <div>
+        <h1 id="page-heading" data-i18n="kitting.title"></h1>
+        <p id="board-summary" class="muted"></p>
+      </div>
+      <button id="refresh" class="button button-quiet" type="button" data-i18n="kitting.refresh"></button>
+    </div>
+
+    <p id="page-status" class="notice" role="status" data-i18n="common.loading"></p>
+    <p id="kitting-message" class="notice" role="status" hidden></p>
+
+    <div id="board-area" hidden>
+      <p id="board-empty" class="muted panel" data-i18n="kitting.empty" hidden></p>
+      <div id="board" class="board"></div>
+
+      <section class="panel" aria-labelledby="waiting-heading">
+        <h2 id="waiting-heading" data-i18n="kitting.waiting"></h2>
+        <p class="muted" data-i18n="kitting.waiting_help"></p>
+        <p id="waiting-empty" class="muted" data-i18n="kitting.waiting_empty" hidden></p>
+        <p id="waiting-error" class="alert" role="alert" hidden></p>
+        <div class="table-wrap">
+          <table class="data-table" id="waiting-table">
+            <thead><tr>
+              <th scope="col" data-i18n="field.asset_tag"></th>
+              <th scope="col" data-i18n="field.type"></th>
+              <th scope="col" data-i18n="field.model"></th>
+              <th scope="col"><span class="visually-hidden" data-i18n="kitting.actions"></span></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+  <noscript>JavaScript is required. / JavaScriptを有効にしてください。</noscript>
+</body>
+</html>
