@@ -327,5 +327,12 @@
   "loans.count": "{total} loans",
   "loans.no_results": "No loans to show.",
   "loans.overdue_summary": "{count} loans are overdue",
-  "form.choose": "Select an option"
+  "form.choose": "Select an option",
+  "login.email_hint": "Enter your registered email address (for example it@demo).",
+  "login.password_hint": "At least 8 characters and at most 72 bytes. Passwords are case-sensitive. You can try to sign in 5 times per minute.",
+  "login.caps_on": "Caps Lock is on.",
+  "login.show_password": "Show",
+  "login.hide_password": "Hide",
+  "login.show_password_label": "Show password",
+  "login.hide_password_label": "Hide password"
 }

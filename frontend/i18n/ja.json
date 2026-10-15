@@ -327,5 +327,12 @@
   "loans.count": "{total}件",
   "loans.no_results": "該当する貸出はありません。",
   "loans.overdue_summary": "返却期限を過ぎた貸出が {count}件あります",
-  "form.choose": "選択してください"
+  "form.choose": "選択してください",
+  "login.email_hint": "登録済みのメールアドレスを入力してください（例: it@demo）。",
+  "login.password_hint": "8文字以上、72バイト以内です。大文字と小文字は区別されます。サインインの試行は1分間に5回までです。",
+  "login.caps_on": "Caps Lockがオンになっています。",
+  "login.show_password": "表示",
+  "login.hide_password": "非表示",
+  "login.show_password_label": "パスワードを表示する",
+  "login.hide_password_label": "パスワードを非表示にする"
 }

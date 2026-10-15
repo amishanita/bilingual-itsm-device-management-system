@@ -27,10 +27,20 @@
 
     <form id="login-form" novalidate>
       <label for="email" data-i18n="login.email"></label>
-      <input id="email" name="email" type="email" autocomplete="username" maxlength="254" required>
+      <input id="email" name="email" type="email" autocomplete="username" maxlength="254" required
+             aria-describedby="email-hint" spellcheck="false" autocapitalize="off">
+      <p id="email-hint" class="hint" data-i18n="login.email_hint"></p>
 
       <label for="password" data-i18n="login.password"></label>
-      <input id="password" name="password" type="password" autocomplete="current-password" maxlength="200" required>
+      <div class="password-row">
+        <input id="password" name="password" type="password" autocomplete="current-password" maxlength="200" required
+               aria-describedby="password-hint caps-warning" spellcheck="false" autocapitalize="off">
+        <button id="password-toggle" class="button button-quiet password-toggle" type="button"
+                aria-controls="password" aria-pressed="false"
+                data-i18n="login.show_password" data-i18n-aria-label="login.show_password_label"></button>
+      </div>
+      <p id="password-hint" class="hint" data-i18n="login.password_hint"></p>
+      <p id="caps-warning" class="caps-warning" role="status" data-i18n="login.caps_on" hidden></p>
 
       <button id="login-submit" class="button button-primary" type="submit" data-i18n="login.submit"></button>
     </form>

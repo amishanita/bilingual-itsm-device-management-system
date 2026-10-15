@@ -15,6 +15,50 @@ function goOn(user) {
   window.location.assign(safeNextPage(params.get("next")) || landingPage(user.role));
 }
 
+/**
+ * Switch the password between hidden and readable, and keep the toggle's
+ * text and state in step (aria-pressed tells screen readers which it is).
+ * @param {HTMLInputElement} input
+ * @param {boolean} visible
+ */
+function showPassword(input, visible) {
+  const toggle = document.getElementById("password-toggle");
+  input.type = visible ? "text" : "password";
+  toggle.setAttribute("aria-pressed", String(visible));
+  toggle.dataset.i18n = visible ? "login.hide_password" : "login.show_password";
+  toggle.dataset.i18nAriaLabel = visible ? "login.hide_password_label" : "login.show_password_label";
+  toggle.textContent = t(toggle.dataset.i18n);
+  toggle.setAttribute("aria-label", t(toggle.dataset.i18nAriaLabel));
+}
+
+/** Show/hide button and a Caps Lock warning for the password field. */
+function setUpPasswordField(input) {
+  const toggle = document.getElementById("password-toggle");
+  toggle.addEventListener("click", () => {
+    showPassword(input, input.type === "password");
+    input.focus();
+  });
+  // Leaving the page (or the tab) hides the password again.
+  window.addEventListener("pagehide", () => showPassword(input, false));
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      showPassword(input, false);
+    }
+  });
+
+  const caps = document.getElementById("caps-warning");
+  const checkCaps = (event) => {
+    if (typeof event.getModifierState === "function") {
+      caps.hidden = !event.getModifierState("CapsLock");
+    }
+  };
+  input.addEventListener("keydown", checkCaps);
+  input.addEventListener("keyup", checkCaps);
+  input.addEventListener("blur", () => {
+    caps.hidden = true;
+  });
+}
+
 async function main() {
   // Already signed in: skip the form.
   const existing = getUser();
@@ -46,6 +90,7 @@ async function main() {
   }
   render();
   document.addEventListener("langchange", render);
+  setUpPasswordField(form.password);
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -59,6 +104,9 @@ async function main() {
       return;
     }
 
+    // Hide the password again before it leaves the page, so it is never left
+    // readable on screen or offered to the browser as plain text.
+    showPassword(form.password, false);
     submit.disabled = true;
     submit.textContent = t("login.submitting");
     render();
