@@ -140,9 +140,22 @@ def test_seed_command_exit_codes(monkeypatch: pytest.MonkeyPatch) -> None:
     assert seed.main() == 2
 
 
-def test_seed_command_reports_missing_settings_cleanly(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_seed_command_reports_missing_settings_cleanly(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A missing JWT_SECRET is refused by name, even when every other setting is present.
+
+    The environment is set explicitly so the test cannot pass because some other
+    setting (such as DEMO_PASSWORD) happens to be missing on this machine.
+    """
+    monkeypatch.delenv("JWT_SECRET", raising=False)
+    monkeypatch.setenv("DEMO_PASSWORD", DEMO_PASSWORD)
+    monkeypatch.setenv("APP_ENV", "development")
+
     def missing_secret() -> Settings:
         return Settings(_env_file=None, database_url="postgresql+psycopg://x@y/z")
 
     monkeypatch.setattr(seed, "get_settings", missing_secret)
-    assert seed.main() == 2
+    with caplog.at_level("ERROR"):
+        assert seed.main() == 2
+    assert "invalid or missing settings: JWT_SECRET" in caplog.text
