@@ -1,0 +1,40 @@
+<!doctype html>
+<!-- Sign-in page. All visible text comes from i18n/*.json through data-i18n keys. -->
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Tamang Amish">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:8000; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <title data-i18n="login.title"></title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/login.js"></script>
+</head>
+<body class="login-page">
+  <main class="login-card" aria-labelledby="login-heading">
+    <div class="login-header">
+      <div id="lang-slot"></div>
+    </div>
+    <p class="login-app" data-i18n="app.name"></p>
+    <h1 id="login-heading" data-i18n="login.title"></h1>
+    <p class="login-tagline" data-i18n="app.tagline"></p>
+
+    <p id="login-notice" class="notice" role="status" hidden></p>
+    <p id="login-error" class="alert" role="alert" hidden></p>
+
+    <form id="login-form" novalidate>
+      <label for="email" data-i18n="login.email"></label>
+      <input id="email" name="email" type="email" autocomplete="username" maxlength="254" required>
+
+      <label for="password" data-i18n="login.password"></label>
+      <input id="password" name="password" type="password" autocomplete="current-password" maxlength="200" required>
+
+      <button id="login-submit" class="button button-primary" type="submit" data-i18n="login.submit"></button>
+    </form>
+  </main>
+  <noscript>JavaScript is required. / JavaScriptを有効にしてください。</noscript>
+</body>
+</html>
