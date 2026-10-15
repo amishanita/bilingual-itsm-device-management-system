@@ -16,6 +16,8 @@
   --color-info-bg: #e6f4f8;
   --color-topbar: #16324f;
   --color-topbar-text: #e8eef5;
+  --color-chart: #2b6cb0;
+  --color-warning-bg: #fff4e5;
 
   --font-sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI",
     "Meiryo", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -290,6 +292,181 @@ textarea {
   opacity: 0.9;
 }
 
+/* Signed-in page layout */
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+
+.page-header h1 {
+  margin: var(--space-2) 0 0;
+  font-size: 1.5rem;
+}
+
+.muted {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.notice .retry,
+.alert .retry {
+  margin-left: var(--space-3);
+  min-height: 36px;
+}
+
+/* KPI cards: two per row on phones, five in a row on wide screens. */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  min-height: 96px;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  color: inherit;
+  text-decoration: none;
+}
+
+a.kpi[href]:hover {
+  border-color: var(--color-primary);
+}
+
+.kpi-label {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.kpi-value {
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-alert {
+  border-color: #f5c2bd;
+  background: var(--color-danger-bg);
+}
+
+.kpi-alert .kpi-value {
+  color: var(--color-danger);
+}
+
+/* Panels, charts, and tables */
+
+.panel-grid {
+  display: grid;
+  align-items: start;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.panel {
+  min-width: 0;
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.panel-grid .panel {
+  margin-top: 0;
+}
+
+.panel h2 {
+  margin: 0 0 var(--space-3);
+  font-size: 1.1rem;
+}
+
+.chart-box {
+  position: relative;
+  height: 220px;
+}
+
+.chart-box-tall {
+  height: 320px;
+}
+
+.count-table,
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.count-table {
+  margin-top: var(--space-3);
+}
+
+.count-table th,
+.count-table td,
+.data-table th,
+.data-table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.count-table th,
+.data-table th {
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.num {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+/* Codes such as asset tags (PC-0018) must never break across lines. */
+.nowrap {
+  white-space: nowrap;
+}
+
+/* Tighter cells on phones so four columns fit at 375px. */
+.data-table th,
+.data-table td {
+  padding: var(--space-2);
+}
+
+.data-table tr.urgent td {
+  background: var(--color-warning-bg);
+}
+
 /* Wider screens: menu always visible on one line. */
 @media (min-width: 900px) {
   .menu-toggle {
@@ -310,5 +487,22 @@ textarea {
   #topbar .tools {
     width: auto;
     margin-left: auto;
+  }
+
+  .page {
+    padding: var(--space-5);
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .panel-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: var(--space-2) var(--space-3);
   }
 }

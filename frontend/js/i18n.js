@@ -103,6 +103,18 @@ export function tError(code) {
 }
 
 /**
+ * Parse an ISO string. A plain date ("2026-10-15") is read as a local calendar
+ * date; new Date() would read it as UTC midnight and show the previous day in
+ * time zones west of UTC.
+ * @param {string} value
+ * @returns {Date}
+ */
+export function parseDate(value) {
+  const plain = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return plain ? new Date(Number(plain[1]), Number(plain[2]) - 1, Number(plain[3])) : new Date(value);
+}
+
+/**
  * Format a date or date-time for the active language (ja-JP or en-US).
  * @param {string|Date|null|undefined} value ISO string or Date.
  * @param {{time?: boolean}} [options] time=true includes hours and minutes.
@@ -112,7 +124,7 @@ export function fmtDate(value, { time = false } = {}) {
   if (!value) {
     return "";
   }
-  const date = value instanceof Date ? value : new Date(value);
+  const date = value instanceof Date ? value : parseDate(value);
   if (Number.isNaN(date.getTime())) {
     return "";
   }

@@ -1,0 +1,102 @@
+<!doctype html>
+<!-- Dashboard for IT staff and managers. Figures come from GET /api/dashboard/summary. -->
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Tamang Amish">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:8000; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <title data-i18n="dashboard.title"></title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Chart.js, pinned and checked with Subresource Integrity. If it fails to
+       load, the page still shows every figure in the tables under each chart. -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"
+          integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ"
+          crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+  <script type="module" src="js/dashboard.js"></script>
+</head>
+<body>
+  <header id="topbar"></header>
+  <main class="page" aria-labelledby="page-heading">
+    <div class="page-header">
+      <h1 id="page-heading" data-i18n="dashboard.title"></h1>
+      <p id="scope-note" class="muted" hidden></p>
+    </div>
+
+    <p id="page-status" class="notice" role="status" data-i18n="common.loading"></p>
+
+    <div id="dashboard" hidden>
+      <section aria-labelledby="kpi-heading">
+        <h2 id="kpi-heading" class="visually-hidden" data-i18n="dashboard.kpi_heading"></h2>
+        <ul class="kpi-grid">
+          <li><a class="kpi" id="kpi-devices" href="devices.html">
+            <span class="kpi-label" data-i18n="dashboard.kpi.devices"></span>
+            <span class="kpi-value" data-field="total_devices"></span>
+          </a></li>
+          <li><a class="kpi" id="kpi-kitting" href="kitting.html">
+            <span class="kpi-label" data-i18n="dashboard.kpi.kitting"></span>
+            <span class="kpi-value" data-field="kitting"></span>
+          </a></li>
+          <li><a class="kpi" id="kpi-overdue" href="loans.html">
+            <span class="kpi-label" data-i18n="dashboard.kpi.overdue_loans"></span>
+            <span class="kpi-value" data-field="overdue_loans"></span>
+          </a></li>
+          <li><a class="kpi" id="kpi-noncompliant" href="devices.html?compliance=non_compliant">
+            <span class="kpi-label" data-i18n="dashboard.kpi.non_compliant"></span>
+            <span class="kpi-value" data-field="non_compliant_devices"></span>
+          </a></li>
+          <li><a class="kpi" id="kpi-tickets" href="tickets.html">
+            <span class="kpi-label" data-i18n="dashboard.kpi.open_tickets"></span>
+            <span class="kpi-value" data-field="open_tickets"></span>
+          </a></li>
+        </ul>
+      </section>
+
+      <p id="chart-unavailable" class="muted" data-i18n="dashboard.chart_unavailable" hidden></p>
+
+      <div class="panel-grid">
+        <section class="panel" aria-labelledby="types-heading">
+          <h2 id="types-heading" data-i18n="dashboard.devices_by_type"></h2>
+          <div class="chart-box"><canvas id="chart-types" role="img" data-i18n-aria-label="dashboard.devices_by_type"></canvas></div>
+          <table class="count-table" id="table-types">
+            <caption class="visually-hidden" data-i18n="dashboard.devices_by_type"></caption>
+            <thead><tr><th scope="col" data-i18n="dashboard.col.type"></th><th scope="col" class="num" data-i18n="dashboard.col.devices"></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </section>
+
+        <section class="panel" aria-labelledby="categories-heading">
+          <h2 id="categories-heading" data-i18n="dashboard.tickets_by_category"></h2>
+          <div class="chart-box chart-box-tall"><canvas id="chart-categories" role="img" data-i18n-aria-label="dashboard.tickets_by_category"></canvas></div>
+          <table class="count-table" id="table-categories">
+            <caption class="visually-hidden" data-i18n="dashboard.tickets_by_category"></caption>
+            <thead><tr><th scope="col" data-i18n="dashboard.col.category"></th><th scope="col" class="num" data-i18n="dashboard.col.tickets"></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </section>
+      </div>
+
+      <section class="panel" aria-labelledby="warranty-heading">
+        <h2 id="warranty-heading"></h2>
+        <p id="warranty-empty" class="muted" data-i18n="dashboard.warranty_empty" hidden></p>
+        <div class="table-wrap">
+          <table class="data-table" id="table-warranty">
+            <thead><tr>
+              <th scope="col" data-i18n="dashboard.col.asset_tag"></th>
+              <th scope="col" data-i18n="dashboard.col.model"></th>
+              <th scope="col" data-i18n="dashboard.col.warranty_end"></th>
+              <th scope="col" class="num" data-i18n="dashboard.col.days_left"></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </main>
+  <noscript>JavaScript is required. / JavaScriptを有効にしてください。</noscript>
+</body>
+</html>

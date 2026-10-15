@@ -63,6 +63,8 @@ def used_keys() -> set[str]:
         text = path.read_text()
         # Any quoted string that looks like "namespace.key" for a known namespace.
         for candidate in re.findall(r'["`]([a-z_]+\.[A-Za-z_.]+)["`]', text):
+            if candidate.endswith((".html", ".js", ".json")):
+                continue  # file names such as "dashboard.html", not keys
             if candidate.split(".", 1)[0] in NAMESPACES:
                 keys.add(candidate)
     # Built at runtime as `lang.${code}` for each language.
@@ -169,6 +171,48 @@ def test_page_has_no_hard_coded_text_or_inline_code(page: Path) -> None:
     assert scanner.inline_handlers == []
     assert scanner.csp is not None, "every page needs a Content Security Policy"
     assert "unsafe-inline" not in scanner.csp and "unsafe-eval" not in scanner.csp
+
+
+class ScriptScanner(HTMLParser):
+    """Collects <script src> tags with their attributes."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.scripts: list[dict[str, str | None]] = []
+        self.csp = ""
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        values = dict(attrs)
+        if tag == "script" and values.get("src"):
+            self.scripts.append(values)
+        if tag == "meta" and (values.get("http-equiv") or "").lower() == "content-security-policy":
+            self.csp = values.get("content") or ""
+
+
+@pytest.mark.parametrize("page", HTML_FILES, ids=[p.name for p in HTML_FILES])
+def test_external_scripts_are_pinned_and_checked(page: Path) -> None:
+    """A CDN script needs an exact version, an integrity hash, and its host in the CSP.
+
+    Without the hash, a changed or compromised file on the CDN would run in the
+    page with the user's session.
+    """
+    scanner = ScriptScanner()
+    scanner.feed(page.read_text(encoding="utf-8"))
+    script_src = next(
+        (part for part in scanner.csp.split(";") if part.strip().startswith("script-src")), ""
+    )
+    for script in scanner.scripts:
+        src = script["src"] or ""
+        if not src.startswith("http"):
+            continue
+        assert src.startswith("https://"), src
+        assert re.search(r"@\d+\.\d+\.\d+/", src), f"pin an exact version: {src}"
+        assert (script.get("integrity") or "").startswith("sha384-"), src
+        assert script.get("crossorigin") == "anonymous", src
+        host = "/".join(src.split("/", 3)[:3])
+        assert host in script_src.split(), f"{host} missing from script-src"
+    if not any((s["src"] or "").startswith("http") for s in scanner.scripts):
+        assert script_src.split() == ["script-src", "'self'"], "no CDN script, so no CDN host"
 
 
 def test_scripts_never_insert_html() -> None:
