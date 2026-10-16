@@ -4,6 +4,7 @@
  */
 
 import { requireUser } from "./auth.js";
+import { mountChatWidget } from "./chat-widget.js";
 import { DEFAULT_LANG, getLang, loadLang, savedLang, t } from "./i18n.js";
 import { renderTopBar } from "./nav.js";
 
@@ -20,6 +21,9 @@ export async function startPage(activePage, roles) {
   // The choice made in this browser wins; otherwise the account's language.
   await loadLang(savedLang() || user.language || DEFAULT_LANG);
   renderTopBar(user, activePage);
+  // The helpdesk chat sits on every signed-in page. It loads in the background
+  // and never blocks the page itself.
+  mountChatWidget().catch((error) => console.warn("Chat widget could not start", error));
   return user;
 }
 

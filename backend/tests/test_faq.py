@@ -69,7 +69,7 @@ def test_seed_japanese_uses_japanese_character_forms() -> None:
 
 def test_seed_text_has_no_em_dashes() -> None:
     for article in FAQ_ARTICLES:
-        assert all("—" not in text for text in article[1:])
+        assert all(chr(0x2014) not in text for text in article[1:])
 
 
 # Reading

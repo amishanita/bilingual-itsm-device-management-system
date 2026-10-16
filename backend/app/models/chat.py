@@ -31,7 +31,9 @@ class ChatSession(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
     ticket_id: Mapped[int | None] = mapped_column(ForeignKey("tickets.id", ondelete="RESTRICT"))
-    pending_action: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    # none_as_null: clearing the action must store SQL NULL, not the JSON value null,
+    # or the check constraint above (rightly) rejects the row.
+    pending_action: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True))
     pending_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 

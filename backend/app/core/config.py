@@ -46,6 +46,17 @@ class Settings(DatabaseSettings):
     jwt_secret: SecretStr
     # Only the seed script needs this. SecretStr keeps it out of logs and reprs.
     demo_password: SecretStr | None = None
+    # Chatbot. With no key (or no model name) the chat endpoint answers
+    # CHAT_UNAVAILABLE and the rest of the app works normally.
+    openai_api_key: SecretStr | None = None
+    openai_model: str | None = None
+    openai_timeout_seconds: float = 20.0
+
+    @property
+    def chat_enabled(self) -> bool:
+        """True when both the API key and the model name are set."""
+        key = self.openai_api_key.get_secret_value().strip() if self.openai_api_key else ""
+        return bool(key and (self.openai_model or "").strip())
 
     @field_validator("jwt_secret")
     @classmethod
