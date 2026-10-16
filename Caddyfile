@@ -1,0 +1,51 @@
+# Production web server: serves frontend/ and proxies /api to the API container.
+# HTTPS certificates come from Let's Encrypt automatically for SITE_DOMAIN
+# (a real domain, or for example 203-0-113-10.sslip.io for a free demo address).
+
+{
+	# Contact address for Let's Encrypt expiry notices.
+	email {$ACME_EMAIL}
+}
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	# Security headers for every response. The CSP here is stricter than the
+	# <meta> tags in the pages (no localhost:8000), and adds frame-ancestors,
+	# which only works as a header.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		Content-Security-Policy "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		# Version banners help attackers more than users.
+		-Server
+	}
+
+	# Interactive API documentation (Swagger UI) loads its script and styles
+	# from a CDN and uses an inline script, so only these two paths get a
+	# looser policy. The API itself is not affected.
+	@apidocs path /api/docs /api/docs/*
+	header @apidocs Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net; img-src 'self' data: https://fastapi.tiangolo.com; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'"
+
+	handle /api/* {
+		# Caddy sets X-Forwarded-For; Uvicorn trusts it only from this container
+		# (FORWARDED_ALLOW_IPS), so clients cannot fake their IP for rate limits.
+		reverse_proxy api:8000
+	}
+
+	handle {
+		root * /srv
+		# Pages and scripts are revalidated on every load, so an update shows up
+		# immediately; unchanged files still come back as 304 Not Modified.
+		header Cache-Control "no-cache"
+		file_server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

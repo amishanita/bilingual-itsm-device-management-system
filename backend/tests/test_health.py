@@ -80,3 +80,21 @@ def test_guard_rejects_unsafe_test_database_urls(test_url: str | None, app_url: 
 def test_guard_accepts_a_separate_test_database() -> None:
     url = "postgresql+psycopg://u:p@db:5432/itsm_test"
     assert validate_test_database_url(url, "postgresql+psycopg://u:p@db:5432/itsm") == url
+
+
+def test_api_docs_are_served_under_api(client: TestClient) -> None:
+    assert client.get("/api/docs").status_code == 200
+    assert client.get("/api/openapi.json").json()["info"]["title"]
+    assert client.get("/docs").status_code == 404
+
+
+def test_api_docs_are_off_in_production() -> None:
+    from app.core.config import AppEnv
+    from app.main import docs_paths
+
+    assert docs_paths(AppEnv.PRODUCTION) == {
+        "docs_url": None,
+        "openapi_url": None,
+        "redoc_url": None,
+    }
+    assert docs_paths(AppEnv.DEMO)["docs_url"] == "/api/docs"

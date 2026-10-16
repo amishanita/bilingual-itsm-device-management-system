@@ -1,0 +1,7 @@
+# Cron jobs for the server (install with: crontab scripts/crontab.example after
+# editing the path). Times are in the server's time zone, which the setup guide
+# sets to Asia/Tokyo, so 03:00 here is 03:00 JST.
+# m  h  dom mon dow  command
+0    3  *   *   *    /home/ubuntu/itsm-platform/scripts/backup.sh        >> /home/ubuntu/itsm-logs/backup.log 2>&1
+30   3  *   *   *    /home/ubuntu/itsm-platform/scripts/reseed-demo.sh   >> /home/ubuntu/itsm-logs/reseed.log 2>&1
+0    5  *   *   0    /home/ubuntu/itsm-platform/scripts/restore-check.sh >> /home/ubuntu/itsm-logs/restore-check.log 2>&1

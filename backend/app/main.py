@@ -6,7 +6,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.core.config import get_settings
+from app.core.config import AppEnv, get_settings
 from app.core.database import check_database
 from app.core.deps import DbSession
 from app.core.errors import AppError, register_error_handlers
@@ -28,7 +28,26 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
-app = FastAPI(title="Bilingual ITSM Device Management System", version="0.1.0")
+
+def docs_paths(app_env: AppEnv) -> dict[str, str | None]:
+    """Where the interactive API docs live, or None to switch them off.
+
+    They sit under /api so the web server proxies them like the API. They are on
+    for development and the public demo (useful for reviewers) and off in production.
+    """
+    enabled = app_env != AppEnv.PRODUCTION
+    return {
+        "docs_url": "/api/docs" if enabled else None,
+        "openapi_url": "/api/openapi.json" if enabled else None,
+        "redoc_url": None,
+    }
+
+
+app = FastAPI(
+    title="Bilingual ITSM Device Management System",
+    version="0.1.0",
+    **docs_paths(settings.app_env),
+)
 app.state.limiter = limiter
 register_error_handlers(app)
 
