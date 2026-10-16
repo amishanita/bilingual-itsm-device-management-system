@@ -1,0 +1,16 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is ignored by Git.
+
+# Your current public IP, e.g. from https://checkip.amazonaws.com, with /32.
+my_ip = "203.0.113.10/32"
+
+# Must be globally unique across all of S3.
+backup_bucket_name = "itsm-backups-yourname-2026"
+
+# Receives a warning email if the monthly AWS bill heads past the budget.
+alert_email = "you@example.com"
+
+# Optional overrides:
+# monthly_budget_usd  = 10
+# ssh_public_key_path = "~/.ssh/id_ed25519.pub"
+# bundle_id           = "micro_3_0"
+# aws_region          = "ap-northeast-1"

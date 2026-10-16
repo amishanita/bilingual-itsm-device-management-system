@@ -21,6 +21,7 @@ infra/terraform/*.tfstate
 infra/terraform/*.tfstate.*
 infra/terraform/*.tfplan
 infra/terraform/terraform.tfvars
+infra/terraform/*.auto.tfvars
 infra/terraform/.terraform.lock.hcl.bak
 
 # Backups and dumps
