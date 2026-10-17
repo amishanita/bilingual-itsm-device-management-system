@@ -1,0 +1,43 @@
+// System architecture. Render from the repository root:
+//   dot -Tpng -Gdpi=110 docs/diagrams/architecture.dot -o docs/architecture.png
+digraph architecture {
+  graph [rankdir=LR, fontname="Helvetica", fontsize=11, nodesep=0.5, ranksep=0.8,
+         labelloc=b, label="Solid lines: request path. Dashed lines: scheduled or optional."];
+  node [shape=box, style="rounded,filled", fillcolor="#ffffff", fontname="Helvetica", fontsize=10];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+
+  browser [label="Browser\n(Japanese / English UI)", fillcolor="#f2f2f2"];
+
+  subgraph cluster_aws {
+    label="AWS (Tokyo, ap-northeast-1), created by Terraform"; labelloc=t; labeljust=l;
+    style="rounded"; color="#c47f00"; fontname="Helvetica"; fontsize=10;
+
+    subgraph cluster_server {
+      label="Lightsail instance, Ubuntu 24.04, 1 GB. Firewall: 80 and 443 open, 22 from one IP"; labelloc=t; labeljust=l;
+      style="rounded,dashed"; color="#888888";
+
+      subgraph cluster_compose {
+        label="docker-compose.prod.yml"; labelloc=t; labeljust=l;
+        style="rounded,filled"; fillcolor="#eef4fb"; color="#1f5fa8";
+
+        caddy [label="Caddy 2\nHTTPS (Let's Encrypt)\nsecurity headers, CSP\nserves frontend/"];
+        api [label="FastAPI (Uvicorn)\nJWT auth, roles, rate limits\nservice layer + audit log"];
+        db [label="PostgreSQL 16\nvolume pgdata", shape=cylinder];
+      }
+      cron [label="cron (JST)\n03:00 backup.sh\n03:30 reseed-demo.sh\nSun 05:00 restore-check.sh", fillcolor="#fff8e6"];
+    }
+
+    s3 [label="S3 bucket\nprivate, AES256, HTTPS only\nexpires after 30 days", shape=cylinder, fillcolor="#fff8e6"];
+    budget [label="AWS Budget\nemail alert", fillcolor="#fff8e6"];
+  }
+
+  openai [label="OpenAI API\n(chatbot, off unless\nkey and model are set)", fillcolor="#f2f2f2"];
+  github [label="GitHub Actions CI\nRuff, pytest, pip-audit,\nimage build, Compose, Caddy,\nshellcheck, Terraform validate", fillcolor="#f2f2f2"];
+
+  browser -> caddy [label="HTTPS 443"];
+  caddy -> api [label="/api/*  (edge network)"];
+  api -> db [label="SQLAlchemy\n(internal network)"];
+  api -> openai [style=dashed, label="tool calling"];
+  cron -> db [style=dashed, label="pg_dump / psql"];
+  cron -> s3 [style=dashed, label="put / get\n(IAM user, no delete)"];
+}
