@@ -2,8 +2,8 @@
 
 Current scope: the four demo logins, 30 employees across five departments,
 60 devices with details, four kitting templates, four devices in kitting,
-eight loans (four open, three of them overdue, and four returned), and 80
-helpdesk tickets with IT replies. A later phase adds FAQ articles.
+eight loans (four open, three of them overdue, and four returned), 80
+helpdesk tickets with IT replies, and 20 FAQ articles in both languages.
 
 Safety rules (Part B.4):
 - Runs only when APP_ENV is development or demo, never production.
@@ -14,6 +14,7 @@ Safety rules (Part B.4):
 """
 
 import logging
+import random
 import sys
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
@@ -370,6 +371,20 @@ TICKET_TEXTS: dict[str, tuple[tuple[str, str], ...]] = {
 # Seeded ticket statuses in order (80 in total).
 TICKET_STATUS_PLAN = ("open",) * 20 + ("in_progress",) * 20 + ("resolved",) * 15 + ("closed",) * 25
 TICKET_PRIORITY_CYCLE = ("medium", "low", "high", "medium", "critical", "medium", "high", "low")
+# How many of the 80 tickets fall in each category. Password and account
+# problems dominate, as on a real helpdesk; hardware faults are rarer.
+TICKET_CATEGORY_COUNTS = {
+    "password": 14,
+    "software": 12,
+    "account": 10,
+    "email": 9,
+    "laptop": 9,
+    "vpn": 8,
+    "network": 6,
+    "smartphone": 6,
+    "tablet": 3,
+    "hardware": 3,
+}
 DEVICE_CATEGORY_TYPES = {
     "laptop": ("laptop",),
     "smartphone": ("smartphone",),
@@ -618,8 +633,10 @@ def build_kitting(session: Session, users_by_email: dict[str, User], now: dateti
                         step_ja=step["ja"],
                         done=is_done,
                         done_by=worker.id if is_done else None,
+                        # Steps were ticked in order, one hour apart; the last
+                        # finished step is the most recent.
                         done_at=(
-                            now - timedelta(days=(run_no - run) * 120, hours=step_no)
+                            now - timedelta(days=(run_no - run) * 120, hours=finished - step_no + 1)
                             if is_done
                             else None
                         ),
@@ -707,7 +724,10 @@ def build_tickets(
     Device tickets link a device the requester actually holds. Tickets in
     progress, resolved, or closed have an IT assignee and a reply.
     """
-    categories = list(TICKET_TEXTS)
+    # A fixed shuffle: varied like real data, identical on every run.
+    categories = [c for c, count in TICKET_CATEGORY_COUNTS.items() for _ in range(count)]
+    random.Random(80).shuffle(categories)  # noqa: S311 - demo data, not security
+    seen: dict[str, int] = {}
     demo_employee = next(e for e in employees if e.employee_code == "E0010")
     staff = (users_by_email["it@demo"], users_by_email["admin@demo"])
 
@@ -720,8 +740,9 @@ def build_tickets(
         held_by.setdefault((holder, asset_type), asset_id)
 
     for index, status in enumerate(TICKET_STATUS_PLAN):
-        category = categories[index % len(categories)]
-        title, description = TICKET_TEXTS[category][(index // len(categories)) % 2]
+        category = categories[index]
+        seen[category] = seen.get(category, 0) + 1
+        title, description = TICKET_TEXTS[category][seen[category] % 2]
         requester = demo_employee if index % 20 == 0 else employees[(index * 7) % len(employees)]
         asset_id = next(
             (

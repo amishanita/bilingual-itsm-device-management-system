@@ -473,5 +473,6 @@
   "error.CHAT_NOTHING_TO_CONFIRM": "確定待ちの問い合わせはありません。",
   "error.CHAT_CONFIRMATION_EXPIRED": "確定の期限が切れました。もう一度依頼してください。",
   "error.CHAT_ACTION_INVALID": "用意した問い合わせの内容が無効になりました。もう一度依頼してください。",
-  "error.INVALID_ARGUMENTS": "入力内容の形式が正しくありません。"
+  "error.INVALID_ARGUMENTS": "入力内容の形式が正しくありません。",
+  "error.INVALID_TIME_RANGE": "開始日時は終了日時より前にしてください。"
 }

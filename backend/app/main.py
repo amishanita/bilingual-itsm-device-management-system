@@ -13,6 +13,7 @@ from app.core.errors import AppError, register_error_handlers
 from app.core.limiter import limiter
 from app.routers import (
     assets,
+    audit,
     auth,
     chat,
     dashboard,
@@ -88,4 +89,5 @@ api.include_router(tickets.router)
 api.include_router(dashboard.router)
 api.include_router(faq.router)
 api.include_router(chat.router)
+api.include_router(audit.router)
 app.include_router(api)

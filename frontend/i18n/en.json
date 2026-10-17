@@ -473,5 +473,6 @@
   "error.CHAT_NOTHING_TO_CONFIRM": "There is no ticket waiting for confirmation.",
   "error.CHAT_CONFIRMATION_EXPIRED": "The confirmation expired. Please ask again.",
   "error.CHAT_ACTION_INVALID": "The prepared ticket is no longer valid. Please ask again.",
-  "error.INVALID_ARGUMENTS": "The request details are not valid."
+  "error.INVALID_ARGUMENTS": "The request details are not valid.",
+  "error.INVALID_TIME_RANGE": "The start time must be earlier than the end time."
 }
