@@ -1,8 +1,12 @@
-# ITSM 端末管理システム
+# 日英対応 IT資産・デバイス管理システム
 
-**会社のPC・スマートフォンを購入から廃棄まで一元管理し、関連するヘルプデスク業務までまとめて扱える日英対応のWebシステムです。**
+**Bilingual ITSM Device Management System**
 
-[![CI](https://github.com/amishanita/itsm-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/amishanita/itsm-platform/actions/workflows/ci.yml)
+会社のPC・スマートフォン・タブレットを、購入からキッティング、配布、貸出、返却、データ消去、廃棄まで
+一元管理する日英対応のWebシステムです。端末に関わるヘルプデスク業務（問い合わせ、FAQ、問い合わせを
+登録できるチャットボット）もあわせて扱います。
+
+[![CI](https://github.com/amishanita/bilingual-itsm-device-management-system/actions/workflows/ci.yml/badge.svg)](https://github.com/amishanita/bilingual-itsm-device-management-system/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
@@ -21,16 +25,22 @@
 
 1. [開発の背景](#開発の背景)
 2. [このプロジェクトで示せるスキル](#このプロジェクトで示せるスキル)
-3. [業務の流れ](#業務の流れ)
-4. [ロールと権限](#ロールと権限)
-5. [画面](#画面)
-6. [システム構成とデータモデル](#システム構成とデータモデル)
-7. [品質とテスト](#品質とテスト)
-8. [セキュリティ](#セキュリティ)
-9. [ローカルでの起動](#ローカルでの起動)
-10. [運用ドキュメント](#運用ドキュメント)
-11. [対象範囲と制約](#対象範囲と制約)
-12. [今後の改善予定](#今後の改善予定)
+3. [画面ごとの機能](#画面ごとの機能)
+4. [業務の流れ](#業務の流れ)
+5. [ロールと権限](#ロールと権限)
+6. [画面](#画面)
+7. [システム構成とデータモデル](#システム構成とデータモデル)
+8. [API一覧](#api一覧)
+9. [品質とテスト](#品質とテスト)
+10. [セキュリティ](#セキュリティ)
+11. [ローカルでの起動](#ローカルでの起動)
+12. [設定項目](#設定項目)
+13. [デモデータ](#デモデータ)
+14. [AWSへのデプロイ](#awsへのデプロイ)
+15. [フォルダ構成](#フォルダ構成)
+16. [運用ドキュメント](#運用ドキュメント)
+17. [対象範囲と制約](#対象範囲と制約)
+18. [今後の改善予定](#今後の改善予定)
 
 ## 開発の背景
 
@@ -56,6 +66,30 @@ PC・スマートフォンのキッティング、資産台帳の更新、予備
 | **インフラ** | 開発・本番のDocker Compose、CaddyによるHTTPSの自動化、TerraformによるAWS構築（Lightsail、S3、IAM、予算アラート）、毎晩の暗号化バックアップと毎週のリストア確認。 | `docker-compose.prod.yml`、`infra/terraform/`、`scripts/` |
 | **セキュリティ** | bcrypt、有効期限の短いJWT、回数制限、厳格なContent Security Policy、最小権限のIAM、秘密情報をGitとTerraformのstateに残さない設計。 | [セキュリティ](#セキュリティ) |
 | **品質保証・運用** | 684件の自動テスト、ロール別の権限確認を含むPostmanコレクション、全画面のブラウザ確認、push時のCI、日本語の構築・運用・障害対応手順書。 | [品質とテスト](#品質とテスト)、[docs/](docs/) |
+
+## 画面ごとの機能
+
+| 画面 | 主な利用者 | 内容 |
+| --- | --- | --- |
+| **サインイン** | 全員 | メールアドレスとパスワード、パスワードの表示切り替え、Caps Lockの警告、言語切り替え。 |
+| **ダッシュボード** | マネージャー以上 | 稼働中の端末、キッティング中、返却期限超過の貸出、非準拠の端末、未解決の問い合わせの件数。種別ごとの端末数とカテゴリ別の未解決問い合わせのグラフ。60日以内に保証が終了する端末。 |
+| **端末一覧** | 全員（一般社員は自分の端末のみ） | 種別・ステータス・OS・コンプライアンス・貸出期限での絞り込み、資産番号・シリアル番号・IMEI・電話番号・社員名での検索、端末の登録。 |
+| **端末詳細** | 全員（参照範囲内） | 全項目と技術情報、次に実行できるステータス変更だけのボタン、進捗バー付きのキッティングチェックリスト、貸出履歴、関連する問い合わせ、変更履歴。 |
+| **キッティング** | IT担当 | キッティング中の端末を担当者別・進捗率付きで表示。 |
+| **貸出管理** | IT担当、マネージャー | 貸出中・期限超過・返却済み・すべての切り替え、期限超過は赤で表示、返却期限付きの貸出フォーム、状態とデータ消去を記録する返却フォーム。 |
+| **社員一覧** | IT担当、マネージャー | 一覧と検索、社員の登録。 |
+| **社員詳細** | IT担当、マネージャー | 社員情報と編集、退職済みにする操作、保有している全端末とそれぞれの返却手段、その社員の問い合わせ。 |
+| **問い合わせ一覧** | 全員（参照範囲内） | ステータス・優先度・カテゴリでの絞り込み、検索、問い合わせの登録。 |
+| **問い合わせ詳細** | 全員（参照範囲内） | ステータス、優先度、担当者、コメント、関連端末。 |
+| **FAQ** | 全員 | 利用者の言語でカテゴリ別に表示し、検索も可能。IT担当は日英を並べて編集。 |
+| **ユーザー管理** | システム管理者 | ログインの作成、ロール変更、有効・無効、社員との紐付け、パスワードの再設定。 |
+| **チャット画面** | 全員（全画面に表示） | FAQをもとに回答し、問い合わせの下書きを作成して確認後に登録するヘルプデスク用チャットボット。 |
+
+**FAQ 20件**（日英）：パスワードのリセット、アカウントロック、多要素認証の設定、VPNに接続できない、
+Outlookが同期しない、Teamsの音声、プリンターが見つからない、Wi-Fi、新しいPCの初回サインイン
+（Autopilot）、Intuneのコンプライアンスエラー、iPhoneの設定、Androidの仕事用プロファイル、端末の紛失・盗難、
+画面の破損、ソフトウェアのインストール依頼、共用端末の貸出、端末の返却、PCが遅い、OneDriveの同期、
+ディスクの容量不足。
 
 ## 業務の流れ
 
@@ -228,6 +262,139 @@ ER図はSQLAlchemyのモデル定義から [docs/diagrams/er_diagram.py](docs/di
 | クラウド | AWS Lightsail、S3、IAM、Budgets（Terraformで管理） |
 | テスト | pytest、Ruff、pip-audit、Postman / newman、Playwright |
 
+### テーブル一覧
+
+<details>
+<summary>13テーブルの内容</summary>
+
+| テーブル | 内容 |
+| --- | --- |
+| `employees` | 社員：社員番号、氏名、メールアドレス、部署、役職、入社日、ステータス（在籍・退職） |
+| `users` | ログインアカウント：メールアドレス、bcryptのハッシュ、ロール、紐付く社員、表示言語、有効・無効 |
+| `assets` | 端末：資産番号、種別、シリアル番号、メーカー、機種、購入日、保証終了日、購入金額、保管場所、ステータス、利用者 |
+| `device_details` | 端末の技術情報：OS、CPU、メモリ、ストレージ、MACアドレス、IMEI、電話番号、SIM、Autopilot、MDM、暗号化、コンプライアンス |
+| `kitting_templates` | 端末種別ごとのチェックリストのテンプレート（手順は日英） |
+| `kitting_tasks` | 1台の端末の1回分のキッティングチェックリスト（誰がいつ完了したか） |
+| `device_loans` | 貸出：端末、社員、貸出担当、返却期限、返却日時、状態、データ消去の有無 |
+| `tickets` | 問い合わせ：件名、内容、カテゴリ、優先度、ステータス、依頼者、担当者、関連端末、登録元 |
+| `ticket_comments` | 問い合わせへのコメント |
+| `faq_articles` | FAQ記事（日英） |
+| `chat_sessions` | チャットボットの会話と、確定待ちの問い合わせ案 |
+| `chat_messages` | 会話内の利用者・アシスタント・ツールのすべてのメッセージ |
+| `audit_logs` | 誰がいつ何を変更したか（変更前後のステータスなど。パスワードやトークンは記録しない） |
+
+</details>
+
+## API一覧
+
+`/api` 配下に49個のエンドポイントがあります。開発モードとデモモードでは `/api/docs` で対話的な
+ドキュメントを確認できます。「以上」は 一般社員 → マネージャー → IT管理者 → システム管理者 の順です。
+エラーは常に `{"detail": {"code", "message"}}` の形式で返し、画面側でコードから日英の文言に変換します。
+
+<details>
+<summary>全エンドポイントと必要なロール</summary>
+
+**認証・ヘルスチェック**
+
+| メソッド | パス | 必要なロール | 内容 |
+| --- | --- | --- | --- |
+| `GET` | `/api/health` | 不要（公開） | APIとデータベースの稼働確認 |
+| `POST` | `/api/auth/login` | 不要（公開） | メールアドレスとパスワードで60分有効のトークンを発行 |
+| `GET` | `/api/auth/me` | ログイン済み | ログイン中のユーザー情報 |
+| `PUT` | `/api/auth/me/language` | ログイン済み | 表示言語（ja / en）を保存 |
+| `POST` | `/api/auth/change-password` | ログイン済み | 現在のパスワードを確認してから変更 |
+
+**ログインアカウント・監査ログ**
+
+| メソッド | パス | 必要なロール | 内容 |
+| --- | --- | --- | --- |
+| `GET` | `/api/users` | システム管理者 | ログインアカウントの一覧（メールアドレスで検索） |
+| `POST` | `/api/users` | システム管理者 | ログインアカウントを作成（社員と紐付け可能） |
+| `PUT` | `/api/users/{user_id}` | システム管理者 | ロール変更、有効・無効、紐付け変更、パスワードの再設定 |
+| `GET` | `/api/audit-logs` | システム管理者 | 監査ログ（新しい順、対象・操作・ユーザー・期間で絞り込み） |
+
+**社員**
+
+| メソッド | パス | 必要なロール | 内容 |
+| --- | --- | --- | --- |
+| `GET` | `/api/employees` | マネージャー以上 | 社員の一覧（氏名・社員番号・メールアドレスで検索） |
+| `POST` | `/api/employees` | IT管理者以上 | 社員を登録 |
+| `GET` | `/api/employees/{employee_id}` | マネージャー以上 | 社員の詳細（参照範囲内のみ） |
+| `GET` | `/api/employees/{employee_id}/devices` | マネージャー以上 | 退職処理：その社員が保有している端末の一覧 |
+| `PUT` | `/api/employees/{employee_id}` | IT管理者以上 | 社員情報を更新（送信した項目のみ） |
+| `DELETE` | `/api/employees/{employee_id}` | IT管理者以上 | 退職処理：退職済みにして、紐付いたログインを無効化 |
+
+**端末**
+
+| メソッド | パス | 必要なロール | 内容 |
+| --- | --- | --- | --- |
+| `GET` | `/api/assets` | ログイン済み | 参照できる端末の一覧（種別・状態・OS・コンプライアンス・期限超過・キーワード） |
+| `POST` | `/api/assets` | IT管理者以上 | 端末を登録（発注済みまたは在庫） |
+| `GET` | `/api/assets/export.csv` | IT管理者以上 | 端末一覧をCSVで出力（BOM付きUTF-8、数式の埋め込み対策済み） |
+| `POST` | `/api/assets/import` | IT管理者以上 | CSVから端末を一括登録（1行でもエラーがあれば何も登録しない） |
+| `GET` | `/api/assets/{asset_id}` | ログイン済み | 端末の詳細と、次に変更できるステータス |
+| `PUT` | `/api/assets/{asset_id}` | IT管理者以上 | 端末の基本情報を編集（ステータスは専用APIで変更） |
+| `GET` | `/api/assets/{asset_id}/details` | ログイン済み | 端末の技術情報 |
+| `PUT` | `/api/assets/{asset_id}/details` | IT管理者以上 | 技術情報を更新（AutopilotとIntuneの項目は手入力） |
+| `POST` | `/api/assets/{asset_id}/status` | IT管理者以上 | ライフサイクルの次のステータスへ変更 |
+| `GET` | `/api/assets/{asset_id}/history` | マネージャー以上 | 端末の変更履歴（一般社員は参照不可） |
+
+**キッティング**
+
+| メソッド | パス | 必要なロール | 内容 |
+| --- | --- | --- | --- |
+| `GET` | `/api/kitting/templates` | IT管理者以上 | キッティングテンプレートの一覧 |
+| `POST` | `/api/kitting/templates` | IT管理者以上 | テンプレートを追加（手順は日英両方） |
+| `POST` | `/api/assets/{asset_id}/kitting/start` | IT管理者以上 | 在庫の端末をキッティング中にし、テンプレートからチェックリストを作成 |
+| `GET` | `/api/assets/{asset_id}/kitting` | マネージャー以上 | 端末のキッティングチェックリスト（過去の実施分も参照可能） |
+| `PATCH` | `/api/kitting-tasks/{task_id}` | IT管理者以上 | チェックリストの手順を完了・未完了にする |
+| `GET` | `/api/kitting/board` | IT管理者以上 | キッティング中の端末を担当者別・進捗率付きで表示 |
+
+**貸出**
+
+| メソッド | パス | 必要なロール | 内容 |
+| --- | --- | --- | --- |
+| `GET` | `/api/loans` | マネージャー以上 | 貸出の一覧（期限超過のみの絞り込み可能） |
+| `POST` | `/api/loans` | IT管理者以上 | 準備完了の端末を在籍中の社員に期限付きで貸出 |
+| `POST` | `/api/loans/{loan_id}/return` | IT管理者以上 | 返却処理（端末の状態、データ消去の確認） |
+
+**問い合わせ**
+
+| メソッド | パス | 必要なロール | 内容 |
+| --- | --- | --- | --- |
+| `GET` | `/api/tickets` | ログイン済み | 参照できる問い合わせの一覧（新しい順、キーワード検索） |
+| `POST` | `/api/tickets` | ログイン済み | 問い合わせを登録（依頼者は本人の社員情報から設定） |
+| `GET` | `/api/tickets/assignees` | IT管理者以上 | 担当者として選べるIT担当の一覧 |
+| `GET` | `/api/tickets/{ticket_id}` | ログイン済み | 問い合わせの詳細とコメント（参照範囲内のみ） |
+| `PUT` | `/api/tickets/{ticket_id}` | ログイン済み | 問い合わせを更新（ロールにより変更できる項目が異なる） |
+| `POST` | `/api/tickets/{ticket_id}/comments` | ログイン済み | 問い合わせにコメントを追加 |
+
+**ダッシュボード**
+
+| メソッド | パス | 必要なロール | 内容 |
+| --- | --- | --- | --- |
+| `GET` | `/api/dashboard/summary` | マネージャー以上 | 端末・キッティング・貸出・コンプライアンス・保証・問い合わせの集計 |
+
+**FAQ**
+
+| メソッド | パス | 必要なロール | 内容 |
+| --- | --- | --- | --- |
+| `GET` | `/api/faq` | ログイン済み | 利用者の言語でFAQを一覧・検索（関連度の高い順） |
+| `POST` | `/api/faq` | IT管理者以上 | FAQを追加（日英両方が必須） |
+| `GET` | `/api/faq/{article_id}` | ログイン済み | FAQ記事を利用者の言語で表示 |
+| `GET` | `/api/faq/{article_id}/full` | IT管理者以上 | FAQ記事を日英両方で取得（編集画面用） |
+| `PUT` | `/api/faq/{article_id}` | IT管理者以上 | FAQ記事を編集（送信した項目のみ） |
+
+**チャットボット**
+
+| メソッド | パス | 必要なロール | 内容 |
+| --- | --- | --- | --- |
+| `POST` | `/api/chat` | ログイン済み | チャットボットにメッセージを送信し、回答を受け取る |
+| `POST` | `/api/chat/confirm` | ログイン済み | チャットボットが作成した問い合わせ案を確定または取り消し |
+| `GET` | `/api/chat/sessions/{session_id}` | ログイン済み | 本人の会話履歴（チャット画面を再度開いたとき用） |
+
+</details>
+
 ## 品質とテスト
 
 ```mermaid
@@ -282,7 +449,7 @@ flowchart TB
 Docker Desktopと、画面のファイルを配信するためのPython 3が必要です。
 
 ```bash
-git clone https://github.com/amishanita/itsm-platform.git
+git clone https://github.com/amishanita/bilingual-itsm-device-management-system.git itsm-platform
 cd itsm-platform
 cp .env.example .env
 ```
@@ -322,6 +489,96 @@ pip install -r requirements-dev.txt
 export DATABASE_URL=postgresql+psycopg://itsm:<password>@localhost:5432/itsm
 export TEST_DATABASE_URL=postgresql+psycopg://itsm:<password>@localhost:5432/itsm_test
 pytest -q
+```
+
+## 設定項目
+
+設定はすべて `.env`（`.env.example` をコピー）から読み込みます。`.env` はGitに含めません。
+
+| 項目 | 用途 |
+| --- | --- |
+| `APP_ENV` | `development`、`demo`、`production`。デモモードではデモアカウントを変更不可にし、本番モードではデモデータの投入を拒否してAPIドキュメントを非公開にします。 |
+| `POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD` | データベース名と接続情報 |
+| `DB_HOST_PORT` | ローカルのPostgreSQLのポート（初期値5432） |
+| `DATABASE_URL`、`TEST_DATABASE_URL` | 接続文字列。テスト用データベース名は末尾が `_test` である必要があります。 |
+| `FRONTEND_ORIGIN` | ブラウザからAPIを呼び出せる唯一のオリジン |
+| `FORWARDED_ALLOW_IPS` | クライアントIPを信頼するプロキシ（本番ではCaddyのみ） |
+| `JWT_SECRET` | トークンの署名鍵（32文字以上、例の値のままだと起動しません） |
+| `DEMO_PASSWORD` | 4つのデモアカウントのパスワード（例の値のままだと投入を拒否します） |
+| `OPENAI_API_KEY`、`OPENAI_MODEL` | チャットボット。どちらかが空欄ならチャットボットは停止します。 |
+| `OPENAI_TIMEOUT_SECONDS`、`OPENAI_REASONING_EFFORT` | タイムアウト秒数と推論設定（新しいモデルでは `none`） |
+| `SITE_DOMAIN`、`ACME_EMAIL` | サーバーのみ：HTTPSの対象ドメインと証明書の通知先 |
+| `BACKUP_S3_BUCKET`、`BACKUP_S3_PREFIX` | サーバーのみ：毎晩のバックアップの保存先 |
+
+## デモデータ
+
+`python -m app.seed` で、実際の業務に近いデータ一式を投入します。何度実行しても同じ結果になります。
+
+| データ | 件数 |
+| --- | --- |
+| ログイン | 4件（ロールごとに1件） |
+| 社員 | 30名（5部署、日本人の氏名） |
+| 端末 | 60台：ノートPC 25台、スマートフォン 20台、タブレット 10台、モニター 5台（全ステータスに分散） |
+| キッティング | テンプレート4種類、キッティング中の端末4台 |
+| 貸出 | 8件：貸出中4件（うち期限超過3件）、返却済み4件 |
+| 問い合わせ | 80件（全カテゴリ・優先度・ステータス、IT担当の返信付き） |
+| FAQ | 20件（日英） |
+
+`APP_ENV=production` ではデータ投入を拒否します。デモモードのサーバーでは、毎晩3時30分にデータを初期状態に戻します。
+
+## AWSへのデプロイ
+
+```mermaid
+flowchart LR
+    TF[Terraform] --> LS[Lightsailインスタンス<br/>Ubuntu 24.04、1 GB]
+    TF --> IP[静的IP]
+    TF --> FW[ファイアウォール<br/>80・443を公開<br/>22は1つのIPのみ]
+    TF --> S3[S3バックアップ用バケット<br/>暗号化、30日で自動削除]
+    TF --> IAM[バックアップ用<br/>IAMユーザー<br/>保存・読み取りのみ<br/>削除は不可]
+    TF --> BG[月額の予算アラート]
+    LS --> APP[Docker Compose:<br/>Caddy、API、PostgreSQL]
+    APP -- 毎晩のバックアップ --> S3
+```
+
+| 手順 | 方法 |
+| --- | --- |
+| 1. AWSリソースの作成 | `infra/terraform/` で `terraform init`、`plan`、`apply`（14リソース） |
+| 2. サーバーの準備 | 初回起動時に自動実行：タイムゾーン、スワップ、セキュリティ更新、Docker、AWS CLI |
+| 3. アプリケーションの起動 | `git clone`、`.env` の設定、`docker compose -f docker-compose.prod.yml up -d --build` |
+| 4. データベース | `alembic upgrade head`、デモモードではデモデータを投入 |
+| 5. 定期実行の登録 | `crontab scripts/crontab.example`：3時バックアップ、3時30分データ初期化、日曜5時リストア確認 |
+
+想定費用はLightsailのプランで月額約7米ドルと、S3の数セントです。作成前に最新のAWS料金を確認してください。
+詳しい手順は [構築手順書](docs/構築手順書.md)、Terraformの詳細は [infra/terraform/README.md](infra/terraform/README.md) にあります。
+
+## フォルダ構成
+
+```text
+itsm-platform/
+├── backend/
+│   ├── app/
+│   │   ├── core/          設定、DB接続、セキュリティ、エラー、回数制限
+│   │   ├── models/        SQLAlchemyのモデル（13テーブル）
+│   │   ├── schemas/       Pydanticの入出力定義
+│   │   ├── routers/       APIエンドポイント
+│   │   ├── services/      業務ルール、チャットボット、CSV、FAQ検索
+│   │   ├── seed.py        デモデータ
+│   │   └── main.py
+│   ├── alembic/           マイグレーション
+│   ├── tests/             pytest（684件）
+│   └── Dockerfile
+├── frontend/
+│   ├── *.html             12画面
+│   ├── js/                ESモジュール（各画面、APIクライアント、多言語、チャット画面）
+│   ├── css/
+│   └── i18n/              en.json と ja.json（各476キー）
+├── infra/terraform/       AWS：Lightsail、S3、IAM、Budgets
+├── scripts/               バックアップ、リストア確認、毎晩の初期化、cron
+├── docs/                  図、画面キャプチャ、Postman、日本語の手順書
+├── docker-compose.yml     ローカル開発用
+├── docker-compose.prod.yml 本番用：Caddy、API、PostgreSQL
+├── Caddyfile              HTTPSとセキュリティヘッダー
+└── .github/workflows/ci.yml
 ```
 
 ## 運用ドキュメント
