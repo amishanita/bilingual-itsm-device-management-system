@@ -84,8 +84,9 @@ audit log list (`GET /api/audit-logs`). They are covered by tests and the Postma
 - Autopilot and Intune fields are typed in by hand. There is no Microsoft Graph connection.
 - "Wipe confirmed" records that an operator wiped the device. The app does not erase anything.
 - Names, ticket text, serial numbers, and notes are not translated; only the interface is.
-- The chatbot is tested in pytest with a scripted model. It has not yet been run against the
-  live OpenAI API, and it is switched off on the public demo to keep the running cost at zero.
+- The chatbot is tested in pytest with a scripted model, and I checked it by hand against the live
+  OpenAI API (`gpt-6-luna` with `OPENAI_REASONING_EFFORT=none`): an FAQ answer, and a ticket drafted,
+  confirmed, and created. It is switched off on the public demo to keep the running cost at zero.
 
 ## Tech stack
 

@@ -42,11 +42,14 @@ results. Link the article (the "link" field) when you use one. If nothing fits, 
 so and offer to create a ticket.
 - Never invent device, ticket, or account data. Use get_my_devices and get_ticket_status.
 - To open a ticket, call create_ticket. It only prepares the ticket: the user then sees a \
-confirmation card and must press Confirm. Never say a ticket was created unless the system said so.
+confirmation card and must press the "{confirm_button}" button on it. Never say a ticket was \
+created unless the system said so.
 - Never ask for, repeat, or store passwords, one-time codes, or recovery keys.
 - You cannot change settings, reset passwords, or unlock accounts yourself."""
 
 LANGUAGE_NAMES = {"ja": "Japanese", "en": "English"}
+# Must match chat.confirm in frontend/i18n, so the model names the button the user sees.
+CONFIRM_BUTTON = {"ja": "登録する", "en": "Create ticket"}
 
 # Short replies written by the server itself (not the model), per language.
 SERVER_TEXT = {
@@ -212,7 +215,12 @@ def handle_message(
     db.commit()
 
     messages: list[dict[str, Any]] = [
-        {"role": "system", "content": SYSTEM_PROMPT.format(language=LANGUAGE_NAMES[language])},
+        {
+            "role": "system",
+            "content": SYSTEM_PROMPT.format(
+                language=LANGUAGE_NAMES[language], confirm_button=CONFIRM_BUTTON[language]
+            ),
+        },
         *history(db, session),
     ]
     context = chat_tools.ToolContext(db, user, session, language)

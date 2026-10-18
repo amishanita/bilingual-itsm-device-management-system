@@ -511,3 +511,23 @@ def test_chat_is_off_without_a_model_name() -> None:
         update={"openai_api_key": SecretStr("sk-test"), "openai_model": ""}
     )
     assert settings.chat_enabled is False
+
+
+@pytest.mark.parametrize("language", ["ja", "en"])
+def test_prompt_names_the_confirm_button_the_user_sees(language: str) -> None:
+    """The model once told users to press "Confirm" while the button said 登録する."""
+    import json
+    from pathlib import Path
+
+    labels = json.loads(
+        (Path(__file__).resolve().parents[2] / "frontend" / "i18n" / f"{language}.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    button = labels["chat.confirm"]
+    assert chatbot.CONFIRM_BUTTON[language] == button
+    prompt = chatbot.SYSTEM_PROMPT.format(
+        language=chatbot.LANGUAGE_NAMES[language], confirm_button=button
+    )
+    assert f'"{button}"' in prompt
+    assert "press Confirm" not in prompt
