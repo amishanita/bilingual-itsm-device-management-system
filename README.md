@@ -156,7 +156,7 @@ ruff check . && ruff format --check .
 ```
 
 The test suite refuses to start unless `TEST_DATABASE_URL` ends in `_test` and differs from
-`DATABASE_URL`, so it cannot wipe real data. At the time of writing it has 675 tests: every
+`DATABASE_URL`, so it cannot wipe real data. At the time of writing it has 684 tests: every
 lifecycle rule, every role and scope check, demo-mode locks, CSV limits, the chatbot flow with
 a scripted model, and the FAQ search.
 
