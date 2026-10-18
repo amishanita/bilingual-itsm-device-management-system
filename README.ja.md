@@ -1,37 +1,194 @@
 # ITSM 端末管理システム
 
-会社のPC・スマートフォンを、購入からキッティング、配布、貸出、返却、データ消去、廃棄まで一元管理する
-日英対応のWebアプリです。端末に関わるヘルプデスク業務（問い合わせチケット、FAQ、チケットを起票できる
-チャットボット）もあわせて扱います。
+**会社のPC・スマートフォンを購入から廃棄まで一元管理し、関連するヘルプデスク業務までまとめて扱える日英対応のWebシステムです。**
+
+[![CI](https://github.com/amishanita/itsm-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/amishanita/itsm-platform/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![Terraform](https://img.shields.io/badge/Terraform-AWS-844FBA?logo=terraform&logoColor=white)
 
 [English README](README.md)
 
 ![ダッシュボード](docs/screenshots/02-dashboard.png)
 
-## デモ
+| 684 | 49 | 13 | 12 | 476 | 2 |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| 自動テスト | APIエンドポイント | テーブル | 画面 | 翻訳済みの表示文言 | 対応言語 |
 
-現在は未公開です。サーバー構成、Terraform、構築手順（[docs/構築手順書.md](docs/構築手順書.md)）は準備済みで、
-公開して動作を確認した後にここへURLを記載します。
+## 目次
 
-デモ用アカウント（パスワードはデモデータ投入時の `DEMO_PASSWORD` で設定します）：
+1. [開発の背景](#開発の背景)
+2. [このプロジェクトで示せるスキル](#このプロジェクトで示せるスキル)
+3. [業務の流れ](#業務の流れ)
+4. [ロールと権限](#ロールと権限)
+5. [画面](#画面)
+6. [システム構成とデータモデル](#システム構成とデータモデル)
+7. [品質とテスト](#品質とテスト)
+8. [セキュリティ](#セキュリティ)
+9. [ローカルでの起動](#ローカルでの起動)
+10. [運用ドキュメント](#運用ドキュメント)
+11. [対象範囲と制約](#対象範囲と制約)
+12. [今後の改善予定](#今後の改善予定)
 
-| ログインID | ロール | できること |
+## 開発の背景
+
+私は日本でITヘルプデスクとして働いています。業務の多くは、Windows AutopilotとIntuneを使った
+PC・スマートフォンのキッティング、資産台帳の更新、予備端末の貸出と返却期限を過ぎた端末の回収、
+そして何度も寄せられる同じ質問への対応です。実際には、これらの情報がExcel、MDMの管理画面、
+問い合わせツール、担当者の記憶に分散し、少しずつずれていきます。
+
+このシステムは、端末まわりの業務を1か所にまとめ、普段手作業で守っている手順をシステム側で
+担保するために作りました。キッティングごとのチェックリスト、データ消去を飛ばせないライフサイクル、
+退職者が保有している端末をすべて一覧できる退職処理、そして「誰がいつ何を変更したか」の記録が中心です。
+
+**デモ：** 現在は未公開です。Terraformのコードと構築手順書は準備済みで、サーバーを公開して動作を
+確認した後にここへURLを記載します。
+
+## このプロジェクトで示せるスキル
+
+| 分野 | 取り組んだこと | 確認できる場所 |
 | --- | --- | --- |
-| `admin@demo` | super_admin | すべての操作、ログインアカウント管理、監査ログ |
-| `it@demo` | it_admin | 端末、キッティング、貸出、社員、問い合わせ、FAQの管理 |
-| `manager@demo` | manager | 自部署の参照、ダッシュボード |
-| `employee@demo` | employee | 自分の端末と問い合わせ、FAQ、チャットボット |
+| **ITヘルプデスク** | ステータス・優先度・担当者・コメントを管理する問い合わせ対応フロー。実際のヘルプデスクでよくある質問をもとにした日英20件のFAQ。FAQを検索し、利用者の確認後に問い合わせを登録するチャットボット。 | [問い合わせ](docs/screenshots/09-ticket.png)、[FAQ](docs/screenshots/10-faq.png)、`backend/app/services/chatbot.py` |
+| **IT資産管理** | ルールで制御された端末ライフサイクル、端末種別ごとのキッティングチェックリスト（Autopilot / Intune、iPhone、Android、共用端末の再キッティング）、返却期限付きの貸出、退職時の端末回収、保証終了の通知、CSVでの取り込み・出力、すべての変更履歴。 | [端末詳細](docs/screenshots/04-device-kitting.png)、[貸出管理](docs/screenshots/06-loans.png)、[退職処理](docs/screenshots/07-employee-leaver.png) |
+| **社内SE・開発** | FastAPIとサービス層によるREST API、PostgreSQLとAlembicによるマイグレーション、ロールに応じたアクセス制御とSQLでの参照範囲の制御、フレームワークを使わない日英切り替え対応のフロントエンド。 | `backend/app/`、`frontend/` |
+| **インフラ** | 開発・本番のDocker Compose、CaddyによるHTTPSの自動化、TerraformによるAWS構築（Lightsail、S3、IAM、予算アラート）、毎晩の暗号化バックアップと毎週のリストア確認。 | `docker-compose.prod.yml`、`infra/terraform/`、`scripts/` |
+| **セキュリティ** | bcrypt、有効期限の短いJWT、回数制限、厳格なContent Security Policy、最小権限のIAM、秘密情報をGitとTerraformのstateに残さない設計。 | [セキュリティ](#セキュリティ) |
+| **品質保証・運用** | 684件の自動テスト、ロール別の権限確認を含むPostmanコレクション、全画面のブラウザ確認、push時のCI、日本語の構築・運用・障害対応手順書。 | [品質とテスト](#品質とテスト)、[docs/](docs/) |
 
-## 作った理由
+## 業務の流れ
 
-私は日本でITヘルプデスクとして働いています。業務の多くは、Windows AutopilotとIntuneを使ったPC・
-スマートフォンのキッティング、資産台帳の更新、予備端末の貸出と返却期限を過ぎた端末の回収、そして
-何度も寄せられる同じ質問への対応です。実際には、これらの情報がExcel、MDMの管理画面、問い合わせ
-ツール、担当者の記憶に分散しがちです。
+### 1. 端末のライフサイクル
 
-このシステムは、端末まわりの業務を1か所にまとめるために、私が実際に行っている手順をもとに作りました。
-端末種別ごとのキッティングチェックリスト、データ消去を飛ばせないライフサイクル、退職者が保有している
-端末をすべて一覧できる退職処理、そして「誰がいつ何を変更したか」を残す監査ログが中心です。
+端末は決められた状態の間だけを移動します。図にない変更はAPIが `INVALID_STATUS_CHANGE` として
+拒否し、すべての変更は監査ログに記録されます。
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    state "発注済み" as ordered
+    state "在庫" as in_stock
+    state "キッティング中" as kitting
+    state "準備完了" as ready
+    state "割当済み" as assigned
+    state "貸出中" as on_loan
+    state "修理中" as repair
+    state "返却済み" as returned
+    state "初期化済み" as wiped
+    state "廃棄済み" as retired
+    [*] --> ordered
+    ordered --> in_stock: 納品
+    in_stock --> kitting: キッティング開始
+    kitting --> ready: 全手順が完了
+    ready --> assigned: 配布
+    ready --> on_loan: 期限付きで貸出
+    assigned --> repair: 修理に出す
+    repair --> ready: 修理完了
+    assigned --> returned: 回収
+    on_loan --> returned: 返却
+    returned --> wiped: データ消去を確認
+    wiped --> in_stock: 在庫に戻す
+    note right of retired
+        どの状態からも廃棄可能
+        （廃棄の記録が必要）
+        廃棄後は元に戻せません
+    end note
+```
+
+### 2. キッティング
+
+```mermaid
+flowchart LR
+    A[在庫の端末] --> B[キッティング開始<br/>テンプレートを選択]
+    B --> C[テンプレートの手順を<br/>この端末にコピー]
+    C --> D[IT担当が手順をチェック<br/>進捗を%で表示]
+    D --> E{すべての手順が完了?}
+    E -- いいえ --> D
+    E -- はい --> F[準備完了にする]
+    F --> G[配布または貸出]
+    E -. 手順を飛ばそうとした場合 .-> X[エラー:<br/>KITTING_NOT_COMPLETE]
+```
+
+テンプレートは、Windows（Autopilot / Intune）、iPhone・iPad、Android、共用端末の再キッティングの
+4種類です。同じ端末を再キッティングしても、前回の記録は履歴として残ります。
+
+### 3. 貸出・返却・退職処理
+
+```mermaid
+flowchart TD
+    L1[端末を貸出<br/>返却期限は当日18:00] --> L2{期限までに返却?}
+    L2 -- いいえ --> L3[貸出管理とダッシュボードで<br/>期限超過として赤く表示]
+    L3 --> R1
+    L2 -- はい --> R1[返却: 端末の状態を記録]
+    R1 --> R2{データ消去済み?}
+    R2 -- はい --> R3[初期化済み<br/>在庫に戻せる状態]
+    R2 -- いいえ --> R4[返却済み<br/>データ消去が残っている]
+
+    E1[社員の退職] --> E2[退職済みにする:<br/>ログインはすぐに無効化]
+    E2 --> E3[社員詳細に<br/>保有端末をすべて表示]
+    E3 --> R1
+```
+
+### 4. ヘルプデスクとチャットボット
+
+チャットボットは、FAQの検索、本人の端末と問い合わせの確認、問い合わせの下書きができます。
+自分で勝手に登録することはなく、利用者が10分以内に確定ボタンを押した場合だけ登録されます。
+
+```mermaid
+sequenceDiagram
+    actor U as 社員
+    participant W as チャット画面
+    participant A as API (FastAPI)
+    participant M as OpenAIのモデル
+    U->>W: 「ノートPCが起動しないので問い合わせを登録したい」
+    W->>A: POST /api/chat（本人確認はログイントークンから）
+    A->>M: メッセージとツール定義
+    M->>A: get_my_devices、search_faq を呼び出し
+    A->>A: この利用者の範囲だけでツールを実行
+    A->>M: ツールの結果
+    M->>A: create_ticket を呼び出し（下書き）
+    A-->>W: 確定ボタン付きの下書きを表示（有効期限10分）
+    U->>W: 「登録する」を押す
+    W->>A: POST /api/chat/confirm
+    A->>A: 問い合わせを登録（source: chatbot）、監査ログに記録
+    A-->>W: 「問い合わせ 81 を登録しました」
+```
+
+仕組み上のルール：モデルが利用者IDを指定することはできず（本人はトークンで判定）、会話履歴は
+直近10件、ツールの呼び出しは1回の質問につき3回まで、利用は1人あたり1時間20回までです。
+
+### 5. 問い合わせのステータス
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    state "未対応" as open
+    state "対応中" as in_progress
+    state "解決済み" as resolved
+    state "完了" as closed
+    [*] --> open
+    open --> in_progress
+    in_progress --> resolved
+    resolved --> closed
+    resolved --> in_progress: 再対応
+    closed --> [*]
+```
+
+## ロールと権限
+
+| | システム管理者 | IT管理者 | マネージャー | 一般社員 |
+| --- | :---: | :---: | :---: | :---: |
+| 端末・キッティング・貸出 | 編集 | 編集 | 自部署を参照 | 自分の端末 |
+| 社員・退職処理 | 編集 | 編集 | 自部署を参照 | |
+| 問い合わせ | すべて | すべて | 自部署 | 自分の問い合わせ |
+| FAQ | 編集 | 編集 | 参照 | 参照 |
+| ダッシュボード | ○ | ○ | 自部署 | |
+| ログインアカウント・監査ログ | ○ | | | |
+| チャットボット | ○ | ○ | ○ | ○ |
+
+参照範囲外のデータには403ではなく **404** を返し、存在自体を知られないようにしています。
+ロールと有効・無効は、リクエストのたびにデータベースから読み直します。
 
 ## 画面
 
@@ -39,53 +196,26 @@
 
 | | |
 | --- | --- |
-| ![端末一覧](docs/screenshots/03-devices.png) 端末一覧（絞り込み・検索） | ![キッティング中の端末](docs/screenshots/04-device-kitting.png) 端末詳細：実行できるステータス変更だけを表示、キッティングチェックリスト |
-| ![キッティングボード](docs/screenshots/05-kitting-board.png) 担当者別のキッティング状況 | ![貸出管理](docs/screenshots/06-loans.png) 貸出管理（期限超過は赤で表示） |
-| ![退職処理](docs/screenshots/07-employee-leaver.png) 社員詳細：退職時に回収する端末の一覧 | ![問い合わせ](docs/screenshots/09-ticket.png) 問い合わせ詳細とコメント |
-| ![FAQ](docs/screenshots/10-faq.png) 利用者の言語で表示するFAQ | ![英語表示のダッシュボード](docs/screenshots/12-dashboard-en.png) 英語表示（マネージャー） |
+| ![端末一覧](docs/screenshots/03-devices.png) **端末一覧**（絞り込み・検索） | ![端末詳細](docs/screenshots/04-device-kitting.png) **端末詳細**：実行できるステータス変更だけを表示、キッティングチェックリスト |
+| ![キッティング](docs/screenshots/05-kitting-board.png) **キッティング状況**（担当者別） | ![貸出管理](docs/screenshots/06-loans.png) **貸出管理**（期限超過は赤） |
+| ![退職処理](docs/screenshots/07-employee-leaver.png) **退職処理**：回収する端末の一覧 | ![問い合わせ](docs/screenshots/09-ticket.png) **問い合わせ詳細**とコメント |
+| ![FAQ](docs/screenshots/10-faq.png) **FAQ**（利用者の言語で表示） | ![英語表示](docs/screenshots/12-dashboard-en.png) **英語表示**（マネージャー） |
+| ![サインイン](docs/screenshots/01-login.png) **サインイン** | ![スマートフォン](docs/screenshots/13-mobile-devices.png) **スマートフォン表示**（375px） |
 
-## 主な機能
+## システム構成とデータモデル
 
-**端末とキッティング**
-- 端末台帳（ノートPC、スマートフォン、タブレット、モニター）。OS、IMEI、電話番号、SIM、MDM登録、
-  暗号化、コンプライアンス状態などの技術情報も管理します。
-- 決められた順序だけを許可するライフサイクル：`ordered → in_stock → kitting → ready → assigned / on_loan
-  → returned → wiped → in_stock`、および `repair` と `retired`。それ以外の変更はエラーになります。
-- 端末種別ごとのテンプレート（Windows Autopilot / Intune、iPhone・iPad、Android、共用端末の再キッティング）
-  からチェックリストを作成します。すべての手順が完了するまで「準備完了」にはできません。再キッティング時も
-  前回の記録は履歴として残ります。
+![構成図](docs/architecture.png)
 
-**貸出と退職処理**
-- 返却期限を決めて端末を貸し出し、期限を過ぎたものは強調表示します。返却時は端末の状態とデータ消去の有無を記録します。
-- 社員詳細では、その社員が保有している端末をすべて表示し、1台ずつ返却できます（割当端末はその画面から、
-  貸出端末は貸出記録から返却）。
+- インターネットから接続できるのはCaddyだけです。画面の配信、HTTPS化、セキュリティヘッダーの付与を
+  行い、`/api` へのリクエストをFastAPIに渡します。
+- APIとデータベースは別々のDockerネットワークに置き、データベース側は外部に出られない設定です。
+- 業務ルールはサービス層にまとめているため、API・チャットボット・CSV取り込みのどこから操作しても
+  同じチェックが働きます。
 
-**ヘルプデスク**
-- 問い合わせチケット：ステータス、優先度、担当者、コメント、関連端末。社員は自分のチケットだけ、
-  マネージャーは自部署のチケットを参照できます。
-- 日英20件のFAQ。利用者の言語で検索でき、IT担当者は両言語を並べて編集できます。
-- チャットボット（OpenAIのツール呼び出し）。FAQの検索、自分の端末や問い合わせ状況の確認を行い、
-  必要に応じてチケットの下書きを作ります。チケットは利用者が確認してから作成されます。
+![ER図](docs/er-diagram.png)
 
-**その他**
-- ダッシュボード：種別・ステータス別の端末数、キッティング進捗、返却期限超過、非準拠端末、
-  60日以内の保証終了、カテゴリ別の未解決チケット。
-- 日本語・英語の切り替え（ユーザーごとに保存、初期値は日本語）。
-- すべての変更を記録する監査ログと、端末ごとの変更履歴。
-
-**現時点ではAPIのみ（画面は未作成）：** 端末のCSV取り込み・出力、パスワード変更、監査ログ一覧
-（`GET /api/audit-logs`）。いずれもテストとPostmanコレクションで確認しています。
-
-### このバージョンでできないこと
-
-- AutopilotとIntuneの項目は手入力です。Microsoft Graphとは連携していません。
-- 「データ消去済み」は、担当者が消去したことを記録するものです。アプリが端末を消去するわけではありません。
-- 氏名、問い合わせ本文、シリアル番号、備考は翻訳しません。翻訳するのは画面の表示だけです。
-- チャットボットはpytestで擬似モデルを使ってテストし、実際のOpenAI API（`gpt-6-luna`、
-  `OPENAI_REASONING_EFFORT=none`）でも手動で確認しました（FAQを使った回答、問い合わせの下書き・確定・登録）。
-  公開デモでは運用費をかけないため停止しています。
-
-## 使用技術
+ER図はSQLAlchemyのモデル定義から [docs/diagrams/er_diagram.py](docs/diagrams/er_diagram.py) で
+生成しているため、実際のテーブル構成と常に一致します。
 
 | 分野 | 技術 |
 | --- | --- |
@@ -94,28 +224,62 @@
 | データベース | PostgreSQL 16 |
 | フロントエンド | HTML、CSS、JavaScript（フレームワークなし）、Chart.js |
 | チャットボット | OpenAI API（ツール呼び出し） |
-| テスト・品質 | pytest、Ruff、pip-audit、Postman / newman |
-| 配布・運用 | Docker Compose、GitHub Actions、Caddy（HTTPS） |
-| クラウド | AWS Lightsail、S3、Terraform |
+| 配布・運用 | Docker Compose、Caddy、GitHub Actions |
+| クラウド | AWS Lightsail、S3、IAM、Budgets（Terraformで管理） |
+| テスト | pytest、Ruff、pip-audit、Postman / newman、Playwright |
 
-## 構成図
+## 品質とテスト
 
-![構成図](docs/architecture.png)
+```mermaid
+flowchart TB
+    P[git push] --> B & D & T
+    subgraph B[バックエンド]
+        direction LR
+        B1[Ruffで静的解析・整形] --> B2[空のDBにマイグレーション]
+        B2 --> B3[デモデータを2回投入<br/>件数が一致すること]
+        B3 --> B4[pytest: 684件]
+        B4 --> B5[pip-audit]
+    end
+    subgraph D[Docker]
+        direction LR
+        D1[APIイメージをビルド] --> D2[非rootで実行されるか]
+        D2 --> D3[本番用ComposeとCaddyfileを検証]
+        D3 --> D4[サーバースクリプトをshellcheck]
+    end
+    subgraph T[Terraform]
+        direction LR
+        T1[fmt -check] --> T2[init と validate]
+    end
+```
 
-インターネットから接続できるのはCaddyだけです。APIとデータベースは別々のDockerネットワークに置き、
-データベース側のネットワークは外部に出られない設定にしています。元データ：
-[docs/diagrams/architecture.dot](docs/diagrams/architecture.dot)
+- **pytest 684件**で、ライフサイクルの全ルール、ロールと参照範囲、デモモードの制限、CSVの上限、
+  擬似モデルを使ったチャットボットの流れ、FAQ検索を確認しています。テスト用データベース名の
+  末尾が `_test` でなければテスト自体が起動しないため、本番データを消すことはありません。
+- ルールを追加するたびに、わざとルールを壊してテストが失敗することも確認しました。
+- **Postmanコレクション：** 44リクエスト、ロールごとの403確認を含む76項目
+  （[docs/postman/](docs/postman/)）。
+- **ブラウザでの確認：** 4つのロール × 2言語 × PCとスマートフォンの幅で全画面を開き（計192画面）、
+  スクリプトエラーと翻訳漏れがないことを確認しました。
+- **実環境での確認：** チャットボットは実際のOpenAI APIで、FAQを使った回答から問い合わせの下書き・
+  確定・登録までを手動で確認しました。
 
-## データモデル
+## セキュリティ
 
-![ER図](docs/er-diagram.png)
-
-SQLAlchemyのモデル定義から [docs/diagrams/er_diagram.py](docs/diagrams/er_diagram.py) で生成しているため、
-実際のテーブル構成と一致します。
+- パスワードはbcryptで保存し、8～72バイト、切り詰めは行いません。ログインはIPごとに1分5回、
+  チャットボットは1人あたり1時間20回までです。
+- JWTにはユーザーIDだけを含めます。無効にしたユーザーは次のリクエストから利用できなくなります。
+- 保護されたすべてのエンドポイントでロールを確認し、参照範囲はSQLの条件で制御します。
+- エラーは常に `{"detail": {"code", "message"}}` の形式で返し、スタックトレースは出しません。
+- CORSは1つのオリジンだけを許可します。画面は `unsafe-inline` を使わないContent Security Policyで
+  配信し、データは `textContent` で表示します。
+- 本番で開いているポートは80と443だけで、SSHは特定の1つのIPアドレスからのみ接続できます。
+- 秘密情報はサーバーの `.env` に置き、Gitには含めません。バックアップ用のアクセスキーはTerraformの外で
+  発行してstateに残さず、バックアップ用ユーザーにはバックアップの削除権限を与えていません。
+- チャットボットのログには、エラーの種類とOpenAIのエラーコードだけを記録し、メッセージ本文は残しません。
 
 ## ローカルでの起動
 
-Docker Desktopと、フロントエンドのファイルを配信するためのPython 3が必要です。
+Docker Desktopと、画面のファイルを配信するためのPython 3が必要です。
 
 ```bash
 git clone https://github.com/amishanita/itsm-platform.git
@@ -123,9 +287,9 @@ cd itsm-platform
 cp .env.example .env
 ```
 
-`.env` を編集し、`POSTGRES_PASSWORD`（`DATABASE_URL` と `TEST_DATABASE_URL` の中のパスワードも同じ値）、
-ランダムな `JWT_SECRET`（`python3 -c "import secrets; print(secrets.token_urlsafe(64))"`）、
-8文字以上の `DEMO_PASSWORD` を設定します。その後、次を実行します。
+`.env` を編集し、`POSTGRES_PASSWORD`（`DATABASE_URL` と `TEST_DATABASE_URL` の中も同じ値）、ランダムな
+`JWT_SECRET`（`python3 -c "import secrets; print(secrets.token_urlsafe(64))"`）、8文字以上の
+`DEMO_PASSWORD` を設定してから、次を実行します。
 
 ```bash
 docker compose up -d --build
@@ -134,13 +298,22 @@ docker compose exec api python -m app.seed
 python3 -m http.server 8080 -d frontend
 ```
 
-http://localhost:8080 を開き、`it@demo` と設定した `DEMO_PASSWORD` でサインインします。
-APIドキュメントは http://localhost:8000/api/docs です。チャットボットを試す場合は、ご自身の
-`OPENAI_API_KEY` と、ツール呼び出しに対応したモデル名を `OPENAI_MODEL` に設定し、もう一度
-`docker compose up -d` を実行してください。新しいOpenAIモデルでは `OPENAI_REASONING_EFFORT=none` も設定してください
-（設定しないと、このエンドポイントでのツール呼び出しが拒否されます）。
+http://localhost:8080 を開き、デモ用アカウントと設定した `DEMO_PASSWORD` でサインインします。
 
-## テスト
+| ログインID | ロール |
+| --- | --- |
+| `admin@demo` | システム管理者 |
+| `it@demo` | IT管理者 |
+| `manager@demo` | マネージャー |
+| `employee@demo` | 一般社員 |
+
+APIドキュメント：http://localhost:8000/api/docs
+
+**チャットボット（任意）：** `OPENAI_API_KEY` と、ツール呼び出しに対応したモデル名を `OPENAI_MODEL` に
+設定します。新しいOpenAIモデルでは `OPENAI_REASONING_EFFORT=none` も必要です。設定後に
+`docker compose up -d api` を実行してください。
+
+**テスト：**
 
 ```bash
 cd backend
@@ -149,62 +322,38 @@ pip install -r requirements-dev.txt
 export DATABASE_URL=postgresql+psycopg://itsm:<password>@localhost:5432/itsm
 export TEST_DATABASE_URL=postgresql+psycopg://itsm:<password>@localhost:5432/itsm_test
 pytest -q
-ruff check . && ruff format --check .
 ```
 
-`TEST_DATABASE_URL` の末尾が `_test` で、かつ `DATABASE_URL` と異なる場合しかテストは起動しないため、
-本番データを消すことはありません。執筆時点で684件のテストがあり、ライフサイクルの全ルール、ロールと
-参照範囲の確認、デモモードの制限、CSVの上限、擬似モデルを使ったチャットボットの流れ、FAQ検索などを
-確認しています。
+## 運用ドキュメント
 
-**CI（GitHub Actions）** では、Ruff、空のデータベースへのマイグレーション、デモデータ投入を2回実行して
-件数が変わらないことの確認、pytest、pip-audit、Dockerイメージのビルドと非rootユーザーでの実行確認、
-本番用ComposeファイルとCaddyfileの検証、サーバースクリプトのshellcheck、`terraform fmt` / `validate` を
-実行します。
+実際にこのシステムを運用する担当者向けに、ビジネス日本語で作成しています。
 
-**PostmanによるAPIテスト：** [docs/postman/itsm.postman_collection.json](docs/postman/itsm.postman_collection.json)
-と `ITSM local` 環境をインポートし、`demo_password` を設定してコレクションを実行します（44リクエスト、
-ロールによる403の確認を含む76項目）。コマンドラインからは次のとおりです。
-`npx newman run docs/postman/itsm.postman_collection.json -e docs/postman/itsm-local.postman_environment.json --env-var demo_password=...`
+| ドキュメント | 内容 |
+| --- | --- |
+| [構築手順書](docs/構築手順書.md) | サーバーの新規構築：Terraform、Docker、HTTPS、cron、初回バックアップ |
+| [運用手順書](docs/運用手順書.md) | 定期確認、バックアップ、リストア、再起動、ユーザー追加、アップデート |
+| [障害対応手順書](docs/障害対応手順書.md) | サイトに接続できない、ディスク不足、証明書エラー、チャットボットが応答しない |
+| [infra/terraform/README.md](infra/terraform/README.md) | AWSリソース、費用、構築後の確認（英語） |
 
-**ブラウザでの確認：** 各画面の作成時に、実際のAPIに対してPlaywrightのスクリプトで確認しました
-（ロール別のメニュー、375pxのスマートフォン表示、言語切り替え、エラー表示など）。CIにはまだ組み込んでいません。
+## 対象範囲と制約
 
-## セキュリティ
-
-- パスワードはbcryptで保存します。8～72バイトで、切り詰めは行いません。ログインはIPごとに1分5回、
-  チャットはユーザーごとに1時間20回までです。
-- JWTに含めるのはユーザーIDだけです。ロールと有効・無効はリクエストのたびにデータベースから読むため、
-  無効にしたユーザーはすぐに利用できなくなります。
-- 参照範囲の制御はSQLの条件で行います。範囲外のデータには403ではなく404を返し、存在自体を知られないようにしています。
-- エラーは常に `{"detail": {"code", "message"}}` の形式で返し、スタックトレースは出しません。
-- CORSは1つのオリジンだけを許可します。画面は `unsafe-inline` を使わないContent Security Policyで配信し、
-  データは `textContent` で表示します。
-- HSTSなどのセキュリティヘッダーはCaddyで付与し、外部に開いているのはCaddyのポートだけです。SSHは
-  特定の1つのIPアドレスからのみ接続できます。
-- 秘密情報はサーバーの `.env` に置き、リポジトリには含めません。Terraformのstateと `terraform.tfvars` も
-  Gitの対象外です。バックアップ用のアクセスキーはTerraformの外で発行し、stateファイルに残らないようにしています。
-- バックアップは毎晩暗号化してS3へ保存し、30日で自動削除します。毎週、最新のバックアップを別のデータベースに
-  復元して、実際に戻せることを確認します。バックアップ用ユーザーには削除権限がありません。
-- デモモードでは4つのデモアカウントは変更できず、データは毎晩初期状態に戻ります。
+- AutopilotとIntuneの項目は手入力です。Microsoft Graphとの連携はまだありません。
+- 「データ消去済み」は担当者が消去したことの記録で、アプリが端末を消去するわけではありません。
+- 氏名、問い合わせ本文、シリアル番号、備考は翻訳しません。翻訳するのは画面の表示だけです。
+- CSVの取り込み・出力、パスワード変更、監査ログはAPIで利用できますが、画面はまだありません。
+- 本番サーバーはデモモードで運用します。デモデータは毎晩初期状態に戻り、本格的な本番運用向けに
+  最初の管理者を作成するコマンドはまだありません。
+- 公開デモでは運用費をかけないため、チャットボットを停止しています。
 
 ## 今後の改善予定
 
 1. Microsoft Graph経由でIntuneからコンプライアンス状態を取得し、手入力をなくす。
-2. Microsoft Entra IDでのサインインに対応し、トークンの保存先をsessionStorageからHttpOnly Cookieへ移す。
+2. Microsoft Entra IDでのサインインに対応し、トークンをHttpOnly Cookieで扱う。
 3. CSV取り込み、パスワード変更、監査ログの画面を作る。
 4. 返却期限超過と保証終了が近い端末をメールで通知する。
 5. PlaywrightのブラウザテストをCIに組み込み、死活監視とアラートを追加する。
-6. 複数人で作業できるよう、TerraformのstateをS3に置いてロックをかける。
-7. 最初の管理者アカウントを作成するコマンドを追加し、`APP_ENV=production` で運用できるようにする
-   （現在はデモデータの投入が本番モードでは拒否されるため、デモモードで構築しています）。
-
-## ドキュメント
-
-- [構築手順書](docs/構築手順書.md)：サーバーを一から構築する手順
-- [運用手順書](docs/運用手順書.md)：バックアップ、リストア、再起動、ユーザー追加、アップデート
-- [障害対応手順書](docs/障害対応手順書.md)：サイトに接続できない、ディスク不足、証明書エラー、チャットボットが応答しない
+6. 最初の管理者を作成するコマンドを追加し、デモモード以外でも運用できるようにする。
 
 ## 作成者
 
-Tamang Amish（[GitHub](https://github.com/amishanita)）
+**Tamang Amish**　ITヘルプデスク（日本）　[GitHub](https://github.com/amishanita)
