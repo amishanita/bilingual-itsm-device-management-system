@@ -437,6 +437,30 @@ def test_adapter_turns_provider_errors_into_chat_provider_error() -> None:
     assert exc.value.code == "CHAT_PROVIDER_ERROR"
 
 
+def test_provider_error_log_names_the_field_but_not_the_message(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A rejected request is logged with OpenAI's code and field name for diagnosis,
+    but never with the message text, which can echo what the user typed."""
+    import httpx
+    from openai import BadRequestError
+
+    request = httpx.Request("POST", "https://example.invalid")
+    secret_text = "user typed something private"
+    error = BadRequestError(
+        f"Invalid value in messages: {secret_text}",
+        response=httpx.Response(400, request=request),
+        body={"message": secret_text, "code": "unsupported_parameter", "param": "tools"},
+    )
+    with caplog.at_level("WARNING"), pytest.raises(AppError):
+        adapter(FakeCompletions(exc=error)).complete([], None)
+    logged = caplog.text
+    assert "BadRequestError" in logged and "status=400" in logged
+    assert "code=unsupported_parameter" in logged and "param=tools" in logged
+    assert "model=configured-model" in logged
+    assert secret_text not in logged
+
+
 def test_chat_is_off_without_a_model_name() -> None:
     from pydantic import SecretStr
 

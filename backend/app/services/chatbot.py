@@ -110,8 +110,17 @@ class OpenAIProvider:
                 kwargs["tools"] = tools
             response = self.client.chat.completions.create(**kwargs)
         except OpenAIError as exc:
-            # The provider's error text can contain request details; log only its type.
-            logger.warning("Chat provider error: %s", type(exc).__name__)
+            # The provider's error text can echo request details, so the message
+            # itself is never logged. The status, error code, and the name of the
+            # rejected field are enough to diagnose a configuration problem.
+            logger.warning(
+                "Chat provider error: %s status=%s code=%s param=%s model=%s",
+                type(exc).__name__,
+                getattr(exc, "status_code", None),
+                getattr(exc, "code", None),
+                getattr(exc, "param", None),
+                self.model,
+            )
             raise AppError(
                 503, "CHAT_PROVIDER_ERROR", "The chat service is not responding."
             ) from exc
