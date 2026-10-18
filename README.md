@@ -139,7 +139,8 @@ python3 -m http.server 8080 -d frontend
 
 Open http://localhost:8080 and sign in as `it@demo` with your `DEMO_PASSWORD`. The API docs are at
 http://localhost:8000/api/docs. To try the chatbot, put your own `OPENAI_API_KEY` and a model that
-supports tool calling in `OPENAI_MODEL`, then `docker compose up -d` again.
+supports tool calling in `OPENAI_MODEL`, then `docker compose up -d` again. Newer OpenAI models also
+need `OPENAI_REASONING_EFFORT=none`; without it they refuse tool calls on this endpoint.
 
 ## Tests
 

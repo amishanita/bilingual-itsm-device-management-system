@@ -2,6 +2,7 @@
 
 from enum import StrEnum
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -51,6 +52,19 @@ class Settings(DatabaseSettings):
     openai_api_key: SecretStr | None = None
     openai_model: str | None = None
     openai_timeout_seconds: float = 20.0
+    # Sent as reasoning_effort when set. Newer OpenAI models only accept function
+    # tools on Chat Completions with "none"; older models reject the field, so it
+    # stays unset unless the model needs it.
+    openai_reasoning_effort: Literal["none", "minimal", "low", "medium", "high"] | None = None
+
+    @field_validator("openai_reasoning_effort", mode="before")
+    @classmethod
+    def empty_effort_means_unset(cls, value: object) -> object:
+        """OPENAI_REASONING_EFFORT= (empty) in .env means "do not send it"."""
+        if isinstance(value, str):
+            value = value.strip().lower()
+            return value or None
+        return value
 
     @property
     def chat_enabled(self) -> bool:

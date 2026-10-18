@@ -136,7 +136,8 @@ python3 -m http.server 8080 -d frontend
 http://localhost:8080 を開き、`it@demo` と設定した `DEMO_PASSWORD` でサインインします。
 APIドキュメントは http://localhost:8000/api/docs です。チャットボットを試す場合は、ご自身の
 `OPENAI_API_KEY` と、ツール呼び出しに対応したモデル名を `OPENAI_MODEL` に設定し、もう一度
-`docker compose up -d` を実行してください。
+`docker compose up -d` を実行してください。新しいOpenAIモデルでは `OPENAI_REASONING_EFFORT=none` も設定してください
+（設定しないと、このエンドポイントでのツール呼び出しが拒否されます）。
 
 ## テスト
 

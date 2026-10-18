@@ -461,6 +461,47 @@ def test_provider_error_log_names_the_field_but_not_the_message(
     assert secret_text not in logged
 
 
+def test_reasoning_effort_is_sent_only_when_configured() -> None:
+    """Newer models need reasoning_effort=none to use tools; older ones reject the field."""
+    from types import SimpleNamespace
+
+    message = SimpleNamespace(content="ok", tool_calls=None)
+    reply = SimpleNamespace(choices=[SimpleNamespace(message=message)])
+
+    plain = FakeCompletions(reply)
+    adapter(plain).complete([{"role": "user", "content": "x"}], [{"type": "function"}])
+    assert "reasoning_effort" not in plain.kwargs
+
+    with_effort = FakeCompletions(reply)
+    provider = adapter(with_effort)
+    provider.reasoning_effort = "none"
+    provider.complete([{"role": "user", "content": "x"}], [{"type": "function"}])
+    assert with_effort.kwargs["reasoning_effort"] == "none"
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"), [("", None), ("  ", None), ("None", "none"), ("low", "low")]
+)
+def test_reasoning_effort_setting_from_env(raw: str, expected: str | None) -> None:
+    from tests.helpers import make_settings
+
+    settings = make_settings().model_validate(
+        {**make_settings().model_dump(), "openai_reasoning_effort": raw}
+    )
+    assert settings.openai_reasoning_effort == expected
+
+
+def test_unknown_reasoning_effort_is_rejected() -> None:
+    from pydantic import ValidationError
+
+    from tests.helpers import make_settings
+
+    with pytest.raises(ValidationError):
+        make_settings().model_validate(
+            {**make_settings().model_dump(), "openai_reasoning_effort": "turbo"}
+        )
+
+
 def test_chat_is_off_without_a_model_name() -> None:
     from pydantic import SecretStr
 

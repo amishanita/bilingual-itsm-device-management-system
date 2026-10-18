@@ -93,6 +93,7 @@ class OpenAIProvider:
         from openai import OpenAI
 
         self.model = (settings.openai_model or "").strip()
+        self.reasoning_effort = settings.openai_reasoning_effort
         self.client = OpenAI(
             api_key=settings.openai_api_key.get_secret_value() if settings.openai_api_key else "",
             timeout=settings.openai_timeout_seconds,
@@ -108,6 +109,8 @@ class OpenAIProvider:
             kwargs: dict[str, Any] = {"model": self.model, "messages": messages}
             if tools:
                 kwargs["tools"] = tools
+            if self.reasoning_effort:
+                kwargs["reasoning_effort"] = self.reasoning_effort
             response = self.client.chat.completions.create(**kwargs)
         except OpenAIError as exc:
             # The provider's error text can echo request details, so the message
