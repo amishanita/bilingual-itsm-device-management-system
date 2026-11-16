@@ -520,6 +520,8 @@ All settings come from `.env` (copy `.env.example`). `.env` is never committed.
 | Tickets | 80 across every category, priority, and status, with IT replies |
 | FAQ | 20 articles in both languages |
 
+All names and data in the seed are fictional.
+
 The seed refuses to run when `APP_ENV=production`. In demo mode the server resets the data every
 night at 03:30.
 
@@ -597,9 +599,9 @@ Written in business Japanese for the team that operates the system.
 - Names, ticket text, serial numbers, and notes are not translated; only the interface is.
 - CSV import and export, password change, and the audit log are available in the API but have no
   screen yet.
-- The production server runs in demo mode: the demo data resets every night, and there is no
-  command yet to create the first admin for a real production setup.
-- The chatbot is switched off on the public demo to keep the running cost at zero.
+- Once deployed, the server will run in demo mode: the demo data resets every night, and there is
+  no command yet to create the first admin for a real production setup.
+- The chatbot will be switched off on the public demo to keep the running cost at zero.
 
 ### Roadmap
 
@@ -643,18 +645,11 @@ Written in business Japanese for the team that operates the system.
 
 ### 開発の背景
 
-本プロジェクトは、日本でITヘルプデスクとして担当している日々の業務をもとに開発しました。主な業務は、
-Windows AutopilotとMicrosoft Intuneを使ったPC・スマートフォンのキッティング、資産台帳の管理、予備端末の
-貸出と返却期限を過ぎた端末の回収、そして繰り返し寄せられる問い合わせへの対応です。多くの職場では、
-これらの情報がExcel、MDMの管理画面、問い合わせツール、担当者個人の知識に分散し、次第に整合性が
-取れなくなります。
+本プロジェクトは、日本でITヘルプデスクとして担当している日々の業務をもとに開発しました。主な業務は、Windows AutopilotとMicrosoft Intuneを使ったPC・スマートフォンのキッティング、資産台帳の管理、予備端末の貸出と返却期限を過ぎた端末の回収、そして繰り返し寄せられる問い合わせへの対応です。多くの職場では、これらの情報がExcel、MDMの管理画面、問い合わせツール、担当者個人の知識に分散し、次第に整合性が取れなくなります。
 
-本システムは、端末に関わる業務を一元化し、通常は手作業で守っている手順をシステムで担保することを
-目的としています。キッティングごとのチェックリスト、データ消去を省略できないライフサイクル、退職者が
-保有する端末をすべて把握できる退職処理、そして「誰が・いつ・何を変更したか」を残す監査ログが中心です。
+本システムは、端末に関わる業務を一元化し、通常は手作業で守っている手順をシステムで担保することを目的としています。キッティングごとのチェックリスト、データ消去を省略できないライフサイクル、退職者が保有する端末をすべて把握できる退職処理、そして「誰が・いつ・何を変更したか」を残す監査ログが中心です。
 
-**デモ：** 現在は未公開です。Terraformのコードと構築手順書は完成しており、サーバーの稼働と動作確認が
-完了した時点でURLを掲載します。
+**デモ：** 現在は未公開です。Terraformのコードと構築手順書は完成しており、サーバーの稼働と動作確認が完了した時点でURLを掲載します。
 
 ### 活用したスキル
 
@@ -685,18 +680,13 @@ Windows AutopilotとMicrosoft Intuneを使ったPC・スマートフォンのキ
 | **ユーザー管理** | システム管理者 | ログインの作成、ロール変更、有効・無効、社員との紐付け、パスワードの再設定。 |
 | **チャット画面** | 全員（全画面に表示） | FAQをもとに回答し、問い合わせの下書きを作成して確認後に登録するヘルプデスク用チャットボット。 |
 
-**FAQ 20件**（日英）：パスワードのリセット、アカウントロック、多要素認証の設定、VPNに接続できない、
-Outlookが同期しない、Teamsの音声、プリンターが見つからない、Wi-Fi、新しいPCの初回サインイン
-（Autopilot）、Intuneのコンプライアンスエラー、iPhoneの設定、Androidの仕事用プロファイル、端末の紛失・盗難、
-画面の破損、ソフトウェアのインストール依頼、共用端末の貸出、端末の返却、PCが遅い、OneDriveの同期、
-ディスクの容量不足。
+**FAQ 20件**（日英）：パスワードのリセット、アカウントロック、多要素認証の設定、VPNに接続できない、Outlookが同期しない、Teamsの音声、プリンターが見つからない、Wi-Fi、新しいPCの初回サインイン（Autopilot）、Intuneのコンプライアンスエラー、iPhoneの設定、Androidの仕事用プロファイル、端末の紛失・盗難、画面の破損、ソフトウェアのインストール依頼、共用端末の貸出、端末の返却、PCが遅い、OneDriveの同期、ディスクの容量不足。
 
 ### 業務の流れ
 
 #### 1. 端末のライフサイクル
 
-端末は決められた状態の間だけを移動します。図にない変更はAPIが `INVALID_STATUS_CHANGE` として
-拒否し、すべての変更は監査ログに記録されます。
+端末は決められた状態の間だけを移動します。図にない変更はAPIが `INVALID_STATUS_CHANGE` として拒否し、すべての変更は監査ログに記録されます。
 
 ```mermaid
 stateDiagram-v2
@@ -744,8 +734,7 @@ flowchart LR
     E -. 手順を飛ばそうとした場合 .-> X[エラー:<br/>KITTING_NOT_COMPLETE]
 ```
 
-テンプレートは、Windows（Autopilot / Intune）、iPhone・iPad、Android、共用端末の再キッティングの
-4種類です。同じ端末を再キッティングしても、前回の記録は履歴として残ります。
+テンプレートは、Windows（Autopilot / Intune）、iPhone・iPad、Android、共用端末の再キッティングの4種類です。同じ端末を再キッティングしても、前回の記録は履歴として残ります。
 
 #### 3. 貸出・返却・退職処理
 
@@ -766,8 +755,7 @@ flowchart TD
 
 #### 4. ヘルプデスクとチャットボット
 
-チャットボットは、FAQの検索、本人の端末と問い合わせの確認、問い合わせの下書きができます。
-自分で勝手に登録することはなく、利用者が10分以内に確定ボタンを押した場合だけ登録されます。
+チャットボットは、FAQの検索、本人の端末と問い合わせの確認、問い合わせの下書きができます。自分で勝手に登録することはなく、利用者が10分以内に確定ボタンを押した場合だけ登録されます。
 
 ```mermaid
 sequenceDiagram
@@ -789,8 +777,7 @@ sequenceDiagram
     A-->>W: 「問い合わせ 81 を登録しました」
 ```
 
-仕組み上のルール：モデルが利用者IDを指定することはできず（本人はトークンで判定）、会話履歴は
-直近10件、ツールの呼び出しは1回の質問につき3回まで、利用は1人あたり1時間20回までです。
+仕組み上のルール：モデルが利用者IDを指定することはできず（本人はトークンで判定）、会話履歴は直近10件、ツールの呼び出しは1回の質問につき3回まで、利用は1人あたり1時間20回までです。
 
 #### 5. 問い合わせのステータス
 
@@ -821,8 +808,7 @@ stateDiagram-v2
 | ログインアカウント・監査ログ | ○ | | | |
 | チャットボット | ○ | ○ | ○ | ○ |
 
-参照範囲外のデータには403ではなく **404** を返し、存在自体を知られないようにしています。
-ロールと有効・無効は、リクエストのたびにデータベースから読み直します。
+参照範囲外のデータには403ではなく **404** を返し、存在自体を知られないようにしています。ロールと有効・無効は、リクエストのたびにデータベースから読み直します。
 
 ### 画面
 
@@ -840,16 +826,13 @@ stateDiagram-v2
 
 ![構成図](docs/architecture.png)
 
-- インターネットから接続できるのはCaddyだけです。画面の配信、HTTPS化、セキュリティヘッダーの付与を
-  行い、`/api` へのリクエストをFastAPIに渡します。
+- インターネットから接続できるのはCaddyだけです。画面の配信、HTTPS化、セキュリティヘッダーの付与を行い、`/api` へのリクエストをFastAPIに渡します。
 - APIとデータベースは別々のDockerネットワークに置き、データベース側は外部に出られない設定です。
-- 業務ルールはサービス層にまとめているため、API・チャットボット・CSV取り込みのどこから操作しても
-  同じチェックが働きます。
+- 業務ルールはサービス層にまとめているため、API・チャットボット・CSV取り込みのどこから操作しても同じチェックが働きます。
 
 ![ER図](docs/er-diagram.png)
 
-ER図はSQLAlchemyのモデル定義から [docs/diagrams/er_diagram.py](docs/diagrams/er_diagram.py) で
-生成しているため、実際のテーブル構成と常に一致します。
+ER図はSQLAlchemyのモデル定義から [docs/diagrams/er_diagram.py](docs/diagrams/er_diagram.py) で生成しているため、実際のテーブル構成と常に一致します。
 
 | 分野 | 技術 |
 | --- | --- |
@@ -887,9 +870,7 @@ ER図はSQLAlchemyのモデル定義から [docs/diagrams/er_diagram.py](docs/di
 
 ### API一覧
 
-`/api` 配下に49個のエンドポイントがあります。開発モードとデモモードでは `/api/docs` で対話的な
-ドキュメントを確認できます。「以上」は 一般社員 → マネージャー → IT管理者 → システム管理者 の順です。
-エラーは常に `{"detail": {"code", "message"}}` の形式で返し、画面側でコードから日英の文言に変換します。
+`/api` 配下に49個のエンドポイントがあります。開発モードとデモモードでは `/api/docs` で対話的なドキュメントを確認できます。「以上」は 一般社員 → マネージャー → IT管理者 → システム管理者 の順です。エラーは常に `{"detail": {"code", "message"}}` の形式で返し、画面側でコードから日英の文言に変換します。
 
 <details>
 <summary>全エンドポイントと必要なロール</summary>
@@ -1019,29 +1000,21 @@ flowchart TB
     end
 ```
 
-- **pytest 684件**で、ライフサイクルの全ルール、ロールと参照範囲、デモモードの制限、CSVの上限、
-  擬似モデルを使ったチャットボットの流れ、FAQ検索を確認しています。テスト用データベース名の
-  末尾が `_test` でなければテスト自体が起動しないため、本番データを消すことはありません。
+- **pytest 684件**で、ライフサイクルの全ルール、ロールと参照範囲、デモモードの制限、CSVの上限、擬似モデルを使ったチャットボットの流れ、FAQ検索を確認しています。テスト用データベース名の末尾が `_test` でなければテスト自体が起動しないため、本番データを消すことはありません。
 - 各業務ルールについて、意図的にルールを壊し、テストが失敗することも確認しています。
-- **Postmanコレクション：** 44リクエスト、ロールごとの403確認を含む76項目
-  （[docs/postman/](docs/postman/)）。
-- **ブラウザでの確認：** 4つのロール × 2言語 × PCとスマートフォンの幅で全画面を開き（計192画面）、
-  スクリプトエラーと翻訳漏れがないことを確認しました。
-- **実環境での確認：** チャットボットは実際のOpenAI APIで、FAQを使った回答から問い合わせの下書き・
-  確定・登録までを手動で確認しました。
+- **Postmanコレクション：** 44リクエスト、ロールごとの403確認を含む76項目（[docs/postman/](docs/postman/)）。
+- **ブラウザでの確認：** 4つのロール × 2言語 × PCとスマートフォンの幅で全画面を開き（計192画面）、スクリプトエラーと翻訳漏れがないことを確認しました。
+- **実環境での確認：** チャットボットは実際のOpenAI APIで、FAQを使った回答から問い合わせの下書き・確定・登録までを手動で確認しました。
 
 ### セキュリティ
 
-- パスワードはbcryptで保存し、8～72バイト、切り詰めは行いません。ログインはIPごとに1分5回、
-  チャットボットは1人あたり1時間20回までです。
+- パスワードはbcryptで保存し、8～72バイト、切り詰めは行いません。ログインはIPごとに1分5回、チャットボットは1人あたり1時間20回までです。
 - JWTにはユーザーIDだけを含めます。無効にしたユーザーは次のリクエストから利用できなくなります。
 - 保護されたすべてのエンドポイントでロールを確認し、参照範囲はSQLの条件で制御します。
 - エラーは常に `{"detail": {"code", "message"}}` の形式で返し、スタックトレースは出しません。
-- CORSは1つのオリジンだけを許可します。画面は `unsafe-inline` を使わないContent Security Policyで
-  配信し、データは `textContent` で表示します。
+- CORSは1つのオリジンだけを許可します。画面は `unsafe-inline` を使わないContent Security Policyで配信し、データは `textContent` で表示します。
 - 本番で開いているポートは80と443だけで、SSHは特定の1つのIPアドレスからのみ接続できます。
-- 秘密情報はサーバーの `.env` に置き、Gitには含めません。バックアップ用のアクセスキーはTerraformの外で
-  発行してstateに残さず、バックアップ用ユーザーにはバックアップの削除権限を与えていません。
+- 秘密情報はサーバーの `.env` に置き、Gitには含めません。バックアップ用のアクセスキーはTerraformの外で発行してstateに残さず、バックアップ用ユーザーにはバックアップの削除権限を与えていません。
 - チャットボットのログには、エラーの種類とOpenAIのエラーコードだけを記録し、メッセージ本文は残しません。
 
 ### ローカルでの起動
@@ -1054,9 +1027,7 @@ cd itsm-platform
 cp .env.example .env
 ```
 
-`.env` を編集し、`POSTGRES_PASSWORD`（`DATABASE_URL` と `TEST_DATABASE_URL` の中も同じ値）、ランダムな
-`JWT_SECRET`（`python3 -c "import secrets; print(secrets.token_urlsafe(64))"`）、8文字以上の
-`DEMO_PASSWORD` を設定してから、次を実行します。
+`.env` を編集し、`POSTGRES_PASSWORD`（`DATABASE_URL` と `TEST_DATABASE_URL` の中も同じ値）、ランダムな`JWT_SECRET`（`python3 -c "import secrets; print(secrets.token_urlsafe(64))"`）、8文字以上の`DEMO_PASSWORD` を設定してから、次を実行します。
 
 ```bash
 docker compose up -d --build
@@ -1076,9 +1047,7 @@ http://localhost:8080 を開き、デモ用アカウントと設定した `DEMO_
 
 APIドキュメント：http://localhost:8000/api/docs
 
-**チャットボット（任意）：** `OPENAI_API_KEY` と、ツール呼び出しに対応したモデル名を `OPENAI_MODEL` に
-設定します。新しいOpenAIモデルでは `OPENAI_REASONING_EFFORT=none` も必要です。設定後に
-`docker compose up -d api` を実行してください。
+**チャットボット（任意）：** `OPENAI_API_KEY` と、ツール呼び出しに対応したモデル名を `OPENAI_MODEL` に設定します。新しいOpenAIモデルでは `OPENAI_REASONING_EFFORT=none` も必要です。設定後に`docker compose up -d api` を実行してください。
 
 **テスト：**
 
@@ -1124,6 +1093,8 @@ pytest -q
 | 問い合わせ | 80件（全カテゴリ・優先度・ステータス、IT担当の返信付き） |
 | FAQ | 20件（日英） |
 
+氏名を含むデモデータは、すべて架空のものです。
+
 `APP_ENV=production` ではデータ投入を拒否します。デモモードのサーバーでは、毎晩3時30分にデータを初期状態に戻します。
 
 ### AWSへのデプロイ
@@ -1148,8 +1119,7 @@ flowchart LR
 | 4. データベース | `alembic upgrade head`、デモモードではデモデータを投入 |
 | 5. 定期実行の登録 | `crontab scripts/crontab.example`：3時バックアップ、3時30分データ初期化、日曜5時リストア確認 |
 
-想定費用はLightsailのプランで月額約7米ドルと、S3の数セントです。作成前に最新のAWS料金を確認してください。
-詳しい手順は [構築手順書](docs/構築手順書.md)、Terraformの詳細は [infra/terraform/README.md](infra/terraform/README.md) にあります。
+想定費用はLightsailのプランで月額約7米ドルと、S3の数セントです。作成前に最新のAWS料金を確認してください。詳しい手順は [構築手順書](docs/構築手順書.md)、Terraformの詳細は [infra/terraform/README.md](infra/terraform/README.md) にあります。
 
 ### フォルダ構成
 
@@ -1198,9 +1168,8 @@ itsm-platform/
 - 「データ消去済み」は担当者が消去したことの記録で、アプリが端末を消去するわけではありません。
 - 氏名、問い合わせ本文、シリアル番号、備考は翻訳しません。翻訳するのは画面の表示だけです。
 - CSVの取り込み・出力、パスワード変更、監査ログはAPIで利用できますが、画面はまだありません。
-- 本番サーバーはデモモードで運用します。デモデータは毎晩初期状態に戻り、本格的な本番運用向けに
-  最初の管理者を作成するコマンドはまだありません。
-- 公開デモでは運用費をかけないため、チャットボットを停止しています。
+- 公開後のサーバーはデモモードで運用する予定です。デモデータは毎晩初期状態に戻り、本格的な本番運用向けに最初の管理者を作成するコマンドはまだありません。
+- 公開デモでは運用費をかけないため、チャットボットを停止する予定です。
 
 ### 今後の改善予定
 
